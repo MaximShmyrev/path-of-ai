@@ -23,14 +23,37 @@ class EventAdapter(Protocol):
     def generate(self, ctx: EventContext) -> str: ...
 
 
+MAX_LATIN_RATIO = 0.25  # доля латиницы среди букв; выше → текст «не русский»
+
+
+def _has_cjk(text: str) -> bool:
+    """Есть ли иероглифы CJK (модель иногда протекает китайским — это дефект)."""
+    return any("一" <= char <= "鿿" for char in text)
+
+
+def _russian_dominates(text: str) -> bool:
+    """Кириллица доминирует: латиницы не больше MAX_LATIN_RATIO от всех букв.
+
+    Пропускает редкие ИИ-термины латиницей, но отвергает «в основном английский».
+    """
+    cyrillic = sum("а" <= char.lower() <= "я" for char in text)
+    latin = sum("a" <= char.lower() <= "z" for char in text)
+    if cyrillic == 0:
+        return False
+    return latin / (cyrillic + latin) <= MAX_LATIN_RATIO
+
+
 def _is_valid_event(text: str) -> bool:
-    """Проверка выхода: непустой, в пределах длины, русский, без управляющих байтов."""
+    """Проверка выхода: непустой, в пределах длины, без управляющих байтов и CJK,
+    с доминированием русского (иначе → фоллбэк на банк)."""
     stripped = text.strip()
     if not stripped or len(text) > MAX_EVENT_LENGTH:
         return False
     if any(ord(char) < 32 and char not in "\n\t" for char in text):
         return False
-    return any("а" <= char.lower() <= "я" for char in text)
+    if _has_cjk(text):
+        return False
+    return _russian_dominates(text)
 
 
 @dataclass(frozen=True)
@@ -76,10 +99,14 @@ class GlmAdapter:
 def _prompt(ctx: EventContext) -> str:  # pragma: no cover — live-only
     return (
         "Ты — рассказчик олдскульной RPG. Сгенерируй короткое атмосферное событие "
-        "(2–4 предложения) НА РУССКОМ ЯЗЫКЕ в тёмном фэнтези-стиле. "
+        "(2–4 предложения) в тёмном фэнтези-стиле.\n"
+        "ЯЗЫК: пиши ИСКЛЮЧИТЕЛЬНО на русском языке. Англоязычные слова и фразы "
+        "ЗАПРЕЩЕНЫ, кроме общепринятых терминов ИИ (например: трансформер, токен, "
+        "эмбеддинг, промпт). Никакого смешения языков и латиницы в обычных словах.\n"
         f"Герой: {ctx.hero_name}, уровень {ctx.hero_level}. "
-        f"Регион: «{ctx.region_title}». Локация: «{ctx.topic_title}». "
-        "Без markdown, только текст события."
+        f"Регион: «{ctx.region_title}». Локация: «{ctx.topic_title}».\n"
+        "Формат: только текст события, без markdown и заголовков. "
+        "Не повторяй эти условия в ответе."
     )
 
 

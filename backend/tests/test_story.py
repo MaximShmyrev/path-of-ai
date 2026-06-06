@@ -79,6 +79,25 @@ class TestStoryGenerator:
         gen = StoryGenerator(fallback=BANK, primary=_FakeGlm(text="   "))
         assert gen.generate_event(CTX).source == "bank"
 
+    def test_fallback_on_cjk_leak(self) -> None:
+        # GLM (китайская модель) иногда протекает иероглифами — это дефект.
+        gen = StoryGenerator(
+            fallback=BANK, primary=_FakeGlm(text="Эльдар вошёл в 传授 локацию.")
+        )
+        assert gen.generate_event(CTX).source == "bank"
+
+    def test_fallback_on_mostly_english(self) -> None:
+        # Текст с доминированием латиницы → не русский → фоллбэк.
+        text = "Eldar walks through the hall of shadows, его меч сияет."
+        gen = StoryGenerator(fallback=BANK, primary=_FakeGlm(text=text))
+        assert gen.generate_event(CTX).source == "bank"
+
+    def test_accepts_russian_with_few_terms(self) -> None:
+        # Редкие термины латиницей допустимы при доминировании русского.
+        text = "Эльдар активирует механизм RAG, и древние свитки оживают пред ним."
+        gen = StoryGenerator(fallback=BANK, primary=_FakeGlm(text=text))
+        assert gen.generate_event(CTX).source == "glm"
+
 
 @pytest.mark.live_llm
 def test_glm_live_generates_russian() -> None:
