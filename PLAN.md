@@ -420,6 +420,20 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E9 закрыт (`AssetGenerator` + Flux + рисованные арты).**
+  - `app/assets.py`: шов `AssetAdapter`; `PlaceholderAdapter` (детерминированный SVG, без
+    сети), `FluxAdapter` (Replicate, live-only, ленивые импорты). `build_specs` (промпты
+    портретов классов и фонов регионов из каталога), `generate_assets` (офлайн, идемпотентно,
+    `manifest.json`), CLI `python -m app.assets`. Горячий путь в сеть не ходит.
+  - Фронтенд: `theme/assetManifest.json` (по умолчанию пуст), `theme/assets.ts`
+    (`resolveAsset` → `/assets/...` или undefined), `HeroPortrait`-превью в `CharacterCreation`
+    (арт при наличии, иначе векторный плейсхолдер).
+  - TDD: PlaceholderAdapter детерминизм, build_specs, generate_assets (файлы+манифест,
+    идемпотентность, force), `_select_adapter` (обе ветки); FluxAdapter — live (`live_flux`).
+    Фронт: `resolveAsset` (пусто/запись/штатный манифест).
+  - **Факты:** backend `pytest` **118 passed, 2 deselected**, `assets` 100% / TOTAL 97%,
+    mypy/ruff чисто; фронт `vitest` **53 passed**, tsc/eslint/prettier чисто, build ок.
+    Закрыт §8 (визуал — арты), §10. Реальная генерация ждёт `REPLICATE_API_TOKEN`.
 - **2026-06-06 — E7b закрыт (фронтенд: локация/квест/level-up/событие).**
   - Стор расширен: экран `location`, действия `enterTopic/leaveTopic/submitQuest/
     requestEvent/dismissLevelUp/dismissEvent`, состояние topic/levelUp/event/questError.

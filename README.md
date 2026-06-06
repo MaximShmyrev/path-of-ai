@@ -51,3 +51,17 @@ npm run typecheck             # tsc --strict
 npm run lint                  # eslint
 npm run format:check          # prettier
 ```
+
+### Графика (арты)
+
+UI-хром и карта — векторные (SVG/CSS), в коде. Рисованные арты (портреты классов,
+фоны регионов) генерируются офлайн через Flux (Replicate) и кладутся в
+`frontend/public/assets/` + манифест `frontend/src/theme/assetManifest.json`:
+
+```bash
+cd backend
+REPLICATE_API_TOKEN=... uv run python -m app.assets   # реальные арты (Flux)
+uv run python -m app.assets                            # без ключа — SVG-плейсхолдеры
+```
+
+Без сгенерированных артов фронтенд показывает векторные плейсхолдеры (сцены не ломаются).

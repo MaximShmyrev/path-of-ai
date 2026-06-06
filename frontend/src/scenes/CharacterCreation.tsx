@@ -1,9 +1,11 @@
 import { useState } from 'react';
 
+import { HeroPortrait } from '../components/ArtSlots';
 import { Button } from '../components/Button';
 import { WindowFrame } from '../components/WindowFrame';
 import { useGame } from '../game/store';
 import { CLASS_IDS, ru } from '../i18n/ru';
+import { resolveAsset } from '../theme/assets';
 
 export function CharacterCreation() {
   const { createHero, state } = useGame();
@@ -21,8 +23,14 @@ export function CharacterCreation() {
     void createHero(trimmed, classId);
   };
 
+  const art = resolveAsset(classId);
+
   return (
     <WindowFrame title={ru.create.heading}>
+      <HeroPortrait
+        classId={classId}
+        {...(art !== undefined ? { src: art } : {})}
+      />
       <form onSubmit={onSubmit}>
         <label>
           {ru.create.nameLabel}

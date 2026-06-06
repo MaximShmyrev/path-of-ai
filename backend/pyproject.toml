@@ -26,6 +26,7 @@ dev = [
     "mutmut>=2.4,<3",
     "types-pyyaml>=6.0",
     "testcontainers[postgres]>=4.8",
+    "replicate>=1.0",
 ]
 
 [tool.ruff]
@@ -46,12 +47,15 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-# Живые LLM-тесты исключены из обязательного прогона (SPEC §2.1, §8).
-addopts = "-q -m 'not live_llm'"
+# Живые внешние тесты исключены из обязательного прогона (SPEC §2.1, §8).
+addopts = "-q -m 'not live_llm and not live_flux'"
 testpaths = ["tests"]
 pythonpath = ["."]
 filterwarnings = ["error"]
-markers = ["live_llm: требует реального GLM_API_KEY (сетевой вызов)"]
+markers = [
+    "live_llm: требует реального GLM_API_KEY (сетевой вызов)",
+    "live_flux: требует реального REPLICATE_API_TOKEN (сетевой вызов)",
+]
 
 [tool.coverage.run]
 branch = true
