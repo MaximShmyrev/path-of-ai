@@ -1,5 +1,6 @@
 /* In-memory тестовый двойник ApiClient (для тестов UI и локального превью). */
 
+import { ApiError } from './http';
 import type {
   ApiClient,
   CompleteView,
@@ -9,6 +10,13 @@ import type {
   MapView,
   TopicView,
 } from './types';
+
+// Упрощённая кривая уровней для двойника (бэкенд считает точно).
+function levelForXp(xp: number): number {
+  if (xp >= 400) return 3;
+  if (xp >= 100) return 2;
+  return 1;
+}
 
 function sampleMap(level: number): MapView {
   return {
@@ -86,17 +94,32 @@ export class FakeApiClient implements ApiClient {
 
   async completeQuest(
     _questId: string,
-    _answers?: number[],
+    answers?: number[],
   ): Promise<CompleteView> {
-    const hero =
-      this.hero ?? (await this.createHero({ name: 'Герой', classId: 'x' }));
+    // Эталон квиза — первый вариант (индекс 0). Иначе 422 (как у бэкенда).
+    if (answers !== undefined && answers.some((value) => value !== 0)) {
+      throw new ApiError(422, 'Неверные ответы на квиз');
+    }
+    if (this.hero === null) {
+      await this.createHero({ name: 'Герой', classId: 'data-alchemist' });
+    }
+    const current = this.hero as HeroView;
+    const oldLevel = current.level;
+    const totalXp = current.total_xp + 150;
+    const level = levelForXp(totalXp);
+    this.hero = {
+      ...current,
+      total_xp: totalXp,
+      level,
+      xp_to_next_level: Math.max(0, (level === 1 ? 100 : 400) - totalXp),
+    };
     return {
       gained_xp: 150,
-      leveled_up: false,
-      new_level: hero.level,
-      newly_unlocked_regions: [],
+      leveled_up: level > oldLevel,
+      new_level: level,
+      newly_unlocked_regions: level >= 2 ? ['llm'] : [],
       already_completed: false,
-      hero,
+      hero: this.hero,
     };
   }
 

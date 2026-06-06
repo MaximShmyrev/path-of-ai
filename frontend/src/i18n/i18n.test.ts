@@ -13,6 +13,9 @@ const SCENE_FILES = [
   'App.tsx',
   'scenes/CharacterCreation.tsx',
   'scenes/WorldMapScene.tsx',
+  'scenes/LocationView.tsx',
+  'scenes/QuestView.tsx',
+  'scenes/EventDialog.tsx',
 ];
 
 function leaves(value: unknown): string[] {

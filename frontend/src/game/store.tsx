@@ -10,14 +10,25 @@ import {
   type ReactNode,
 } from 'react';
 
-import type { ApiClient, HeroView, MapView } from '../api/types';
+import { ApiError } from '../api/http';
+import type {
+  ApiClient,
+  EventView,
+  HeroView,
+  MapView,
+  TopicView,
+} from '../api/types';
 
-export type Screen = 'loading' | 'create' | 'map';
+export type Screen = 'loading' | 'create' | 'map' | 'location';
 
 export type GameState = {
   screen: Screen;
   hero: HeroView | null;
   map: MapView | null;
+  topic: TopicView | null;
+  levelUpLevel: number | null;
+  event: EventView | null;
+  questError: string | null;
   error: string | null;
   busy: boolean;
 };
@@ -26,6 +37,20 @@ type Action =
   | { type: 'showCreate' }
   | { type: 'enterMap'; hero: HeroView; map: MapView }
   | { type: 'mapLoaded'; map: MapView }
+  | { type: 'enterLocation'; topic: TopicView }
+  | { type: 'leaveLocation' }
+  | {
+      type: 'questResult';
+      hero: HeroView;
+      map: MapView;
+      topic: TopicView;
+      level: number | null;
+    }
+  | { type: 'questError'; message: string }
+  | { type: 'clearQuestError' }
+  | { type: 'dismissLevelUp' }
+  | { type: 'event'; event: EventView }
+  | { type: 'dismissEvent' }
   | { type: 'busy'; busy: boolean }
   | { type: 'error'; message: string };
 
@@ -33,6 +58,10 @@ const initialState: GameState = {
   screen: 'loading',
   hero: null,
   map: null,
+  topic: null,
+  levelUpLevel: null,
+  event: null,
+  questError: null,
   error: null,
   busy: false,
 };
@@ -47,10 +76,39 @@ function reducer(state: GameState, action: Action): GameState {
         screen: 'map',
         hero: action.hero,
         map: action.map,
+        topic: null,
         error: null,
       };
     case 'mapLoaded':
       return { ...state, map: action.map };
+    case 'enterLocation':
+      return {
+        ...state,
+        screen: 'location',
+        topic: action.topic,
+        questError: null,
+      };
+    case 'leaveLocation':
+      return { ...state, screen: 'map', topic: null, event: null };
+    case 'questResult':
+      return {
+        ...state,
+        hero: action.hero,
+        map: action.map,
+        topic: action.topic,
+        levelUpLevel: action.level,
+        questError: null,
+      };
+    case 'questError':
+      return { ...state, questError: action.message };
+    case 'clearQuestError':
+      return { ...state, questError: null };
+    case 'dismissLevelUp':
+      return { ...state, levelUpLevel: null };
+    case 'event':
+      return { ...state, event: action.event };
+    case 'dismissEvent':
+      return { ...state, event: null };
     case 'busy':
       return { ...state, busy: action.busy };
     case 'error':
@@ -66,6 +124,16 @@ export type Game = {
   state: GameState;
   createHero: (name: string, classId: string) => Promise<void>;
   refreshMap: () => Promise<void>;
+  enterTopic: (topicId: string) => Promise<void>;
+  leaveTopic: () => void;
+  submitQuest: (
+    topicId: string,
+    questId: string,
+    answers?: number[],
+  ) => Promise<void>;
+  dismissLevelUp: () => void;
+  requestEvent: (locationId: string) => Promise<void>;
+  dismissEvent: () => void;
 };
 
 const GameContext = createContext<Game | null>(null);
@@ -120,9 +188,98 @@ export function GameProvider({ api, children }: GameProviderProps) {
     dispatch({ type: 'mapLoaded', map });
   }, [api]);
 
+  const enterTopic = useCallback(
+    async (topicId: string) => {
+      try {
+        const topic = await api.getTopic(topicId);
+        dispatch({ type: 'enterLocation', topic });
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 423) {
+          dispatch({ type: 'error', message: 'Локация заблокирована' });
+        } else {
+          dispatch({ type: 'error', message: errorMessage(error) });
+        }
+      }
+    },
+    [api],
+  );
+
+  const leaveTopic = useCallback(() => {
+    dispatch({ type: 'leaveLocation' });
+  }, []);
+
+  const submitQuest = useCallback(
+    async (topicId: string, questId: string, answers?: number[]) => {
+      dispatch({ type: 'clearQuestError' });
+      try {
+        const result = await api.completeQuest(questId, answers);
+        const [map, topic] = await Promise.all([
+          api.getMap(),
+          api.getTopic(topicId),
+        ]);
+        dispatch({
+          type: 'questResult',
+          hero: result.hero,
+          map,
+          topic,
+          level: result.leveled_up ? result.new_level : null,
+        });
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 422) {
+          dispatch({ type: 'questError', message: 'Неверный ответ' });
+        } else {
+          dispatch({ type: 'error', message: errorMessage(error) });
+        }
+      }
+    },
+    [api],
+  );
+
+  const dismissLevelUp = useCallback(() => {
+    dispatch({ type: 'dismissLevelUp' });
+  }, []);
+
+  const requestEvent = useCallback(
+    async (locationId: string) => {
+      try {
+        const event = await api.generateEvent(locationId);
+        dispatch({ type: 'event', event });
+      } catch (error) {
+        if (!(error instanceof ApiError && error.status === 404)) {
+          dispatch({ type: 'error', message: errorMessage(error) });
+        }
+      }
+    },
+    [api],
+  );
+
+  const dismissEvent = useCallback(() => {
+    dispatch({ type: 'dismissEvent' });
+  }, []);
+
   const value = useMemo<Game>(
-    () => ({ state, createHero, refreshMap }),
-    [state, createHero, refreshMap],
+    () => ({
+      state,
+      createHero,
+      refreshMap,
+      enterTopic,
+      leaveTopic,
+      submitQuest,
+      dismissLevelUp,
+      requestEvent,
+      dismissEvent,
+    }),
+    [
+      state,
+      createHero,
+      refreshMap,
+      enterTopic,
+      leaveTopic,
+      submitQuest,
+      dismissLevelUp,
+      requestEvent,
+      dismissEvent,
+    ],
   );
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }

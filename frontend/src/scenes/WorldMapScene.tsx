@@ -4,7 +4,7 @@ import { useGame } from '../game/store';
 import { ru } from '../i18n/ru';
 
 export function WorldMapScene() {
-  const { state } = useGame();
+  const { state, enterTopic } = useGame();
   if (state.map === null || state.hero === null) {
     return <p>{ru.loading}</p>;
   }
@@ -21,7 +21,10 @@ export function WorldMapScene() {
           max={hero.total_xp + hero.xp_to_next_level}
         />
       </header>
-      <WorldMap regions={map.regions} />
+      <WorldMap
+        regions={map.regions}
+        onEnterTopic={(topicId) => void enterTopic(topicId)}
+      />
     </section>
   );
 }
