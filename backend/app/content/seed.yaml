@@ -1,0 +1,302 @@
+# Штатный контент «Путь ИИ» (MVP). Источник истины — этот файл (не БД).
+# Валидируется при загрузке: уникальные id, DAG пререквизитов, ≥1 practice на тему,
+# неубывающие unlock_level регионов, корректные индексы ответов квизов.
+
+progression:
+  base_xp: 100        # порог уровня N = base_xp * (N-1)²
+  max_level: 10
+
+classes:
+  - id: data-alchemist
+    title: "Алхимик данных"
+    avatar_ref: "classes/data-alchemist.png"
+    modifiers:
+      ml-foundations: 1.10
+  - id: model-mage
+    title: "Маг моделей"
+    avatar_ref: "classes/model-mage.png"
+    modifiers:
+      llm: 1.10
+  - id: artifact-engineer
+    title: "Инженер артефактов"
+    avatar_ref: "classes/artifact-engineer.png"
+    modifiers:
+      agents: 1.10
+      rag: 1.05
+
+regions:
+  # ── Регион 1: Основы ML ──────────────────────────────────────────────
+  - id: ml-foundations
+    title: "Долина основ машинного обучения"
+    unlock_level: 1
+    topics:
+      - id: supervised-basics
+        title: "Обучение с учителем"
+        prerequisites: []
+        quests:
+          - id: supervised-basics-theory
+            title: "Свиток: что такое обучение с учителем"
+            kind: theory
+            xp: 50
+          - id: supervised-basics-practice
+            title: "Испытание: обучи классификатор"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Что предсказывает модель классификации?"
+                options: ["Непрерывное число", "Метку класса", "Случайный шум"]
+                answer: 1
+      - id: model-evaluation
+        title: "Оценка моделей"
+        prerequisites: ["supervised-basics"]
+        quests:
+          - id: model-evaluation-theory
+            title: "Свиток: метрики качества"
+            kind: theory
+            xp: 50
+          - id: model-evaluation-practice
+            title: "Испытание: выбери метрику для дисбаланса классов"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Какая метрика устойчива к дисбалансу классов?"
+                options: ["Accuracy", "F1-score", "Сумма ошибок"]
+                answer: 1
+      - id: feature-engineering
+        title: "Признаки и данные"
+        prerequisites: ["supervised-basics"]
+        quests:
+          - id: feature-engineering-theory
+            title: "Свиток: подготовка признаков"
+            kind: theory
+            xp: 50
+          - id: feature-engineering-practice
+            title: "Испытание: нормализуй признаки"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Зачем масштабировать признаки?"
+                options:
+                  - "Чтобы модель быстрее и стабильнее сходилась"
+                  - "Чтобы увеличить число строк"
+                  - "Это никогда не нужно"
+                answer: 0
+
+  # ── Регион 2: Большие языковые модели ────────────────────────────────
+  - id: llm
+    title: "Цитадель больших языковых моделей"
+    unlock_level: 2
+    topics:
+      - id: transformers
+        title: "Трансформеры"
+        prerequisites: ["model-evaluation"]
+        quests:
+          - id: transformers-theory
+            title: "Свиток: механизм внимания"
+            kind: theory
+            xp: 50
+          - id: transformers-practice
+            title: "Испытание: разбери self-attention"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Что вычисляет механизм внимания (attention)?"
+                options:
+                  - "Веса важности между токенами"
+                  - "Градиент функции потерь"
+                  - "Размер словаря"
+                answer: 0
+      - id: prompting
+        title: "Промптинг"
+        prerequisites: ["transformers"]
+        quests:
+          - id: prompting-theory
+            title: "Свиток: искусство промпта"
+            kind: theory
+            xp: 50
+          - id: prompting-practice
+            title: "Испытание: составь few-shot промпт"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Что такое few-shot промптинг?"
+                options:
+                  - "Примеры в промпте перед задачей"
+                  - "Обучение модели с нуля"
+                  - "Уменьшение числа параметров"
+                answer: 0
+      - id: fine-tuning
+        title: "Дообучение моделей"
+        prerequisites: ["transformers"]
+        events: true
+        quests:
+          - id: fine-tuning-theory
+            title: "Свиток: когда дообучать"
+            kind: theory
+            xp: 50
+          - id: fine-tuning-practice
+            title: "Испытание: подготовь датасет для дообучения"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Что обычно дешевле для адаптации под задачу?"
+                options: ["Промптинг/RAG", "Полное переобучение", "Смена архитектуры"]
+                answer: 0
+          - id: fine-tuning-boss
+            title: "Босс: защити выбор стратегии адаптации"
+            kind: boss
+            xp: 300
+            quiz:
+              - prompt: "LoRA — это про что?"
+                options:
+                  - "Параметро-эффективное дообучение"
+                  - "Алгоритм поиска"
+                  - "Формат файла"
+                answer: 0
+
+  # ── Регион 3: RAG и поиск ────────────────────────────────────────────
+  - id: rag
+    title: "Библиотека RAG и поиска знаний"
+    unlock_level: 4
+    topics:
+      - id: embeddings
+        title: "Эмбеддинги"
+        prerequisites: ["prompting"]
+        quests:
+          - id: embeddings-theory
+            title: "Свиток: векторные представления"
+            kind: theory
+            xp: 50
+          - id: embeddings-practice
+            title: "Испытание: посчитай близость векторов"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Что измеряет косинусная близость эмбеддингов?"
+                options: ["Смысловую похожесть", "Длину строки", "Число токенов"]
+                answer: 0
+      - id: vector-search
+        title: "Векторный поиск"
+        prerequisites: ["embeddings"]
+        quests:
+          - id: vector-search-theory
+            title: "Свиток: ANN и индексы"
+            kind: theory
+            xp: 50
+          - id: vector-search-practice
+            title: "Испытание: подбери top-k для поиска"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Что возвращает поиск top-k по векторам?"
+                options:
+                  - "k наиболее близких документов"
+                  - "Случайные k документов"
+                  - "Все документы"
+                answer: 0
+      - id: rag-pipeline
+        title: "RAG-конвейер"
+        prerequisites: ["vector-search"]
+        events: true
+        quests:
+          - id: rag-pipeline-theory
+            title: "Свиток: retrieve → augment → generate"
+            kind: theory
+            xp: 50
+          - id: rag-pipeline-practice
+            title: "Испытание: собери RAG-конвейер"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Зачем в RAG этап retrieve?"
+                options:
+                  - "Достать релевантный контекст для ответа"
+                  - "Ускорить токенизацию"
+                  - "Сжать модель"
+                answer: 0
+          - id: rag-pipeline-boss
+            title: "Босс: устрани галлюцинации в ответах"
+            kind: boss
+            xp: 300
+            quiz:
+              - prompt: "Что снижает галлюцинации LLM?"
+                options:
+                  - "Грунтование на найденных источниках"
+                  - "Повышение температуры"
+                  - "Удаление контекста"
+                answer: 0
+
+  # ── Регион 4: Агенты ─────────────────────────────────────────────────
+  - id: agents
+    title: "Башня автономных агентов"
+    unlock_level: 6
+    topics:
+      - id: tools
+        title: "Инструменты и вызовы"
+        prerequisites: ["rag-pipeline"]
+        quests:
+          - id: tools-theory
+            title: "Свиток: вызов инструментов"
+            kind: theory
+            xp: 50
+          - id: tools-practice
+            title: "Испытание: опиши схему инструмента"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Зачем агенту инструменты (tools)?"
+                options:
+                  - "Выполнять действия вне модели"
+                  - "Увеличить контекст"
+                  - "Снизить точность"
+                answer: 0
+      - id: planning
+        title: "Планирование"
+        prerequisites: ["tools"]
+        quests:
+          - id: planning-theory
+            title: "Свиток: декомпозиция задач"
+            kind: theory
+            xp: 50
+          - id: planning-practice
+            title: "Испытание: разбей цель на шаги"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "Что делает агент на этапе планирования?"
+                options:
+                  - "Разбивает цель на подзадачи"
+                  - "Удаляет память"
+                  - "Меняет веса модели"
+                answer: 0
+      - id: multi-agent
+        title: "Мультиагентные системы"
+        prerequisites: ["planning"]
+        events: true
+        quests:
+          - id: multi-agent-theory
+            title: "Свиток: оркестрация агентов"
+            kind: theory
+            xp: 50
+          - id: multi-agent-practice
+            title: "Испытание: спроектируй обмен сообщениями"
+            kind: practice
+            xp: 150
+            quiz:
+              - prompt: "В чём смысл мультиагентной системы?"
+                options:
+                  - "Несколько специализированных агентов решают задачу совместно"
+                  - "Один агент работает медленнее"
+                  - "Полный отказ от LLM"
+                answer: 0
+          - id: multi-agent-boss
+            title: "Босс: собери команду агентов под задачу"
+            kind: boss
+            xp: 300
+            quiz:
+              - prompt: "Что важно для надёжной оркестрации агентов?"
+                options:
+                  - "Чёткие роли и протокол обмена"
+                  - "Случайный порядок вызовов"
+                  - "Отсутствие проверок"
+                answer: 0

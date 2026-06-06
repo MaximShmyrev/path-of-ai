@@ -420,6 +420,19 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E2 закрыт (`catalog` + seed-схема + валидация + MVP-контент).**
+  - `app/catalog.py`: шов `ContentSource` (`InMemorySource` + `YamlContentSource`),
+    pydantic-схема разбора, `Catalog` с O(1)-индексами (`region/topic/quest/hero_class/
+    prerequisites/quests_for_topic`), `load_catalog`, `default_catalog`.
+  - Семантические инварианты (fail fast, §7.9/§8): уникальные id, существование
+    пререквизитов, **ацикличность (Kahn, O(V+E))**, ≥1 practice на тему, practice→квиз,
+    неубывающие unlock_level регионов, индекс ответа квиза в диапазоне.
+  - Домен расширен: `Quest`, `QuizQuestion`, `QuestKind`, флаг `events` у `Topic`.
+  - **MVP-seed** `app/content/seed.yaml`: 4 региона (ML→LLM→RAG→Агенты), 12 тем
+    (каждая с практикой+квизом), 3 класса с модификаторами, боссы; events на 3 темах.
+  - TDD 4 среза RED→GREEN (загрузка/индексы → 8 негативов валидации → парсинг → реальный seed).
+  - **Факты:** `pytest` **50 passed**; coverage `catalog` 98% / `domain` 100% / TOTAL 99%
+    (≥85% ✓); `mypy --strict` 0; `ruff`/format чисто. Решён конфликт ruff B905/B010 ⨯ mypy.
 - **2026-06-06 — E1 закрыт (ядро `progression`).**
   - Реализованы чистые функции (без I/O): `LevelCurve.level_for_xp`/`xp_to_next_level`
     (квадратичная кривая, порог уровня N = `base_xp*(N-1)²`, бинарный поиск O(log L)),

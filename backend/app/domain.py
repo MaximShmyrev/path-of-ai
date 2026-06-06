@@ -57,6 +57,33 @@ class Topic:
     id: str
     region_id: str
     prerequisites: frozenset[str] = frozenset()
+    events: bool = False  # поддерживает ли тема сюжетные события (LLM, E6)
+
+
+QuestKind = Literal["theory", "practice", "boss"]
+
+
+@dataclass(frozen=True)
+class QuizQuestion:
+    """Вопрос автопроверяемого квиза. `answer` — индекс эталона; на клиент не
+    отдаётся (анти-чит, см. SPEC §8 и E4)."""
+
+    prompt: str
+    options: tuple[str, ...]
+    answer: int
+
+
+@dataclass(frozen=True)
+class Quest:
+    """Учебное задание внутри темы. Практический квест содержит квиз."""
+
+    id: str
+    title: str
+    kind: QuestKind
+    xp: int
+    topic_id: str
+    region_id: str
+    quiz: tuple[QuizQuestion, ...] = ()
 
 
 TopicStatus = Literal["locked", "available", "completed"]
