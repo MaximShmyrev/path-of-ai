@@ -177,6 +177,7 @@ def load_catalog(source: ContentSource) -> Catalog:
         Topic(
             id=topic.id,
             region_id=region.id,
+            title=topic.title,
             prerequisites=frozenset(topic.prerequisites),
             events=topic.events,
         )

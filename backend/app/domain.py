@@ -40,6 +40,7 @@ class HeroRecord:
 
     name: str
     hero_class_id: str
+    avatar_ref: str | None = None
     total_xp: int = 0
     completed_quests: frozenset[str] = frozenset()
 
@@ -70,6 +71,7 @@ class Topic:
 
     id: str
     region_id: str
+    title: str = ""
     prerequisites: frozenset[str] = frozenset()
     events: bool = False  # поддерживает ли тема сюжетные события (LLM, E6)
 

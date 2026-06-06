@@ -420,6 +420,20 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E4 закрыт (HTTP API + анти-чит).**
+  - `app/api.py` (тонкий adapter): `create_app(catalog?, store?)`, эндпоинты
+    `POST/GET /api/hero`, `GET /api/map`, `GET /api/topics/{id}`,
+    `POST /api/quests/{id}/complete`. DTO на pydantic; доменные ошибки → HTTP
+    (404/409/422/423) через обработчики. CORS (`FRONTEND_ORIGIN`), каталог грузится
+    один раз при `create_app`. `QuestService` получил публичные `load_hero/level_of/
+    unlocks_for`; `Topic` получил `title`.
+  - **Анти-чит (§7.8):** `total_xp/level` от клиента не в DTO → игнорируются; эталоны
+    квизов не попадают в ответы (`QuizQuestionResponse` без `answer`). Покрыто тестами.
+  - TDD 4 среза: hero (create/dup 409/имя 422/anticheat) → map (статусы/404) →
+    topics (200/423/404/без эталонов) → complete (XP/идемпотентность/422/423/404/level-up).
+  - **Факты:** `pytest` **84 passed**; coverage `api` 100% / TOTAL 99%; `mypy --strict` 0;
+    `ruff`/format чисто. **Docker smoke:** `docker compose up` → create hero → complete →
+    level-up до 2 → регион `llm` открыт; seed упакован в образ. Закрыты §7.1, §7.2, §7.5(api), §7.8.
 - **2026-06-06 — E3 закрыт (`quests` — оркестрация прохождения).**
   - `app/quests.py`: `QuestService.complete_quest` — поток найти→доступность→
     идемпотентность→валидация квиза→`award_xp`→сохранение→новые разблокировки.

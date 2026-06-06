@@ -8,7 +8,7 @@
 from dataclasses import dataclass, replace
 
 from app.catalog import Catalog
-from app.domain import HeroRecord, HeroState, Quest
+from app.domain import HeroRecord, HeroState, Quest, UnlockState
 from app.progression import LevelCurve, award_xp, class_modifier, recompute_unlocks
 from app.state import StateStore
 
@@ -84,12 +84,23 @@ class QuestService:
             completed_topics=_completed_topics(self.catalog, hero.completed_quests),
         )
 
-    def complete_quest(
-        self, quest_id: str, submission: QuizSubmission | None
-    ) -> CompletionResult:
+    def load_hero(self) -> HeroRecord:
+        """Текущий герой или HeroNotFound."""
         hero = self.store.load_hero()
         if hero is None:
             raise HeroNotFound("Герой ещё не создан")
+        return hero
+
+    def level_of(self, hero: HeroRecord) -> int:
+        return self._curve.level_for_xp(hero.total_xp)
+
+    def unlocks_for(self, hero: HeroRecord) -> UnlockState:
+        return recompute_unlocks(self._curve, self._hero_state(hero), self.catalog)
+
+    def complete_quest(
+        self, quest_id: str, submission: QuizSubmission | None
+    ) -> CompletionResult:
+        hero = self.load_hero()
 
         try:
             quest = self.catalog.quest(quest_id)
