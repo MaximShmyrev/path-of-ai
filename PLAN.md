@@ -420,6 +420,18 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E1 закрыт (ядро `progression`).**
+  - Реализованы чистые функции (без I/O): `LevelCurve.level_for_xp`/`xp_to_next_level`
+    (квадратичная кривая, порог уровня N = `base_xp*(N-1)²`, бинарный поиск O(log L)),
+    `class_modifier`, `award_xp` (round(base*modifier), факт level-up, без мутации входа),
+    `recompute_unlocks` (статусы регионов/тем, O(V+E)). Домен: `HeroClass/HeroState/
+    XpResult/Region/Topic/UnlockState/Catalog`-протокол в `app/domain.py`.
+  - TDD: 4 среза RED→GREEN→REFACTOR (кривая → class_modifier → award_xp → unlocks).
+    Закрыты §7.4 (level-up, граница XP), логика §7.5 (locked), §9 (Big-O в докстрингах).
+  - **Факты:** `pytest` 30 passed; **coverage 100%** (`progression.py` 52 stmts/20 branch,
+    `domain.py` — 100%); **mutation 89%** (mutmut 2.x, 49/55 убито; 6 выживших —
+    эквивалентные: тексты сообщений + декоратор); `mypy --strict` 0; `ruff`/format чисто.
+  - Решён конфликт ruff B010 ⨯ mypy (frozen-атрибут) в тесте неизменяемости.
 - **2026-06-06 — E0 закрыт (каркас + тулчейн + docker compose).**
   - Backend: FastAPI + `uv` (Python 3.12), `/health` liveness без БД. RED→GREEN→REFACTOR
     (тест через httpx+ASGITransport). `pytest` 1 passed, **coverage 100%**, `mypy --strict`

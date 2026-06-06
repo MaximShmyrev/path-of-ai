@@ -16,6 +16,9 @@ dev = [
     "ruff>=0.8",
     "mypy>=1.13",
     "coverage>=7.6",
+    # mutmut 2.x: мутирует на месте и гоняет обычный pytest (3.x ломает импорты
+    # пакета — копирует в mutants/ только мутируемый файл).
+    "mutmut>=2.4,<3",
 ]
 
 [tool.ruff]
@@ -40,3 +43,9 @@ filterwarnings = ["error"]
 [tool.coverage.run]
 branch = true
 source = ["app"]
+
+[tool.mutmut]
+# Мутируем бизнес-логику ядра (SPEC §8: mutation score ≥ 70%).
+# Запуск: uv run mutmut run  (см. ниже paths_to_mutate / runner — формат mutmut 2.x).
+paths_to_mutate = "app/progression.py"
+runner = "python -m pytest -x -q tests/test_progression.py"
