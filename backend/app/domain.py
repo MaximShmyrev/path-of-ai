@@ -31,6 +31,20 @@ class HeroState:
 
 
 @dataclass(frozen=True)
+class HeroRecord:
+    """Персистентное состояние героя (то, что хранит StateStore).
+
+    Хранятся факты: имя, класс, опыт и завершённые квесты. Уровень и завершённые
+    темы — производные (вычисляются в слое quests из каталога), здесь не дублируются.
+    """
+
+    name: str
+    hero_class_id: str
+    total_xp: int = 0
+    completed_quests: frozenset[str] = frozenset()
+
+
+@dataclass(frozen=True)
 class XpResult:
     """Результат начисления XP: новое состояние + факт повышения уровня."""
 

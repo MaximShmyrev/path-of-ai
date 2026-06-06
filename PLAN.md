@@ -420,6 +420,20 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E3 закрыт (`quests` — оркестрация прохождения).**
+  - `app/quests.py`: `QuestService.complete_quest` — поток найти→доступность→
+    идемпотентность→валидация квиза→`award_xp`→сохранение→новые разблокировки.
+    XP меняется только здесь и только через `progression`. Ошибки: `HeroNotFound`,
+    `QuestNotFound`, `LocationLocked`, `InvalidSubmission`. `CompletionResult` с
+    `gained_xp/leveled_up/new_level/newly_unlocked_regions/already_completed`.
+  - `app/state.py`: шов `StateStore` + `InMemoryStore` (Postgres — E5). `HeroRecord`
+    в домене (имя/класс/total_xp/completed_quests). Тема завершена ⇔ все её квесты пройдены.
+  - TDD-срезы: practice→XP, theory без квиза, идемпотентность, невалид/нет-сдачи,
+    locked по уровню и по пререквизиту, level-up+разблокировка региона, пререквизит-флоу,
+    QuestNotFound/HeroNotFound. Закрыты §7.3, §7.5, §7.4.
+  - **Факты:** `pytest` **61 passed**; coverage `quests` 100% / `progression` 100% /
+    `state` 100% / TOTAL 99%; **mutation 88%** (82/93 на progression+quests; выжившие —
+    эквивалентные: frozen-декораторы + тексты); `mypy --strict` 0; `ruff`/format чисто.
 - **2026-06-06 — E2 закрыт (`catalog` + seed-схема + валидация + MVP-контент).**
   - `app/catalog.py`: шов `ContentSource` (`InMemorySource` + `YamlContentSource`),
     pydantic-схема разбора, `Catalog` с O(1)-индексами (`region/topic/quest/hero_class/

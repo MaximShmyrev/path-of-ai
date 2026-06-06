@@ -48,7 +48,9 @@ branch = true
 source = ["app"]
 
 [tool.mutmut]
-# Мутируем бизнес-логику ядра (SPEC §8: mutation score ≥ 70%).
-# Запуск: uv run mutmut run  (см. ниже paths_to_mutate / runner — формат mutmut 2.x).
-paths_to_mutate = "app/progression.py"
-runner = "python -m pytest -x -q tests/test_progression.py"
+# Мутируем бизнес-логику ядра (SPEC §8: mutation score ≥ 70% на progression+quests).
+# Запуск (mutmut 2.x, конфиг через CLI):
+#   uv run mutmut run --paths-to-mutate="app/progression.py,app/quests.py" \
+#     --runner="python -m pytest -x -q tests/test_progression.py tests/test_quests.py"
+paths_to_mutate = "app/progression.py,app/quests.py"
+runner = "python -m pytest -x -q tests/test_progression.py tests/test_quests.py"
