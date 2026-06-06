@@ -1,8 +1,17 @@
+import { useGame } from './game/store';
+import { ru } from './i18n/ru';
+import { CharacterCreation } from './scenes/CharacterCreation';
+import { WorldMapScene } from './scenes/WorldMapScene';
+
 export function App() {
+  const { state } = useGame();
   return (
     <main>
-      <h1>Путь ИИ</h1>
-      <p>РПГ для изучения искусственного интеллекта.</p>
+      <h1>{ru.appTitle}</h1>
+      {state.error !== null && <p role="alert">{state.error}</p>}
+      {state.screen === 'loading' && <p>{ru.loading}</p>}
+      {state.screen === 'create' && <CharacterCreation />}
+      {state.screen === 'map' && <WorldMapScene />}
     </main>
   );
 }
