@@ -420,6 +420,17 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E0 закрыт (каркас + тулчейн + docker compose).**
+  - Backend: FastAPI + `uv` (Python 3.12), `/health` liveness без БД. RED→GREEN→REFACTOR
+    (тест через httpx+ASGITransport). `pytest` 1 passed, **coverage 100%**, `mypy --strict`
+    0 ошибок, `ruff check`/`format` чисто, `filterwarnings=error`.
+  - Frontend: React 18 + TS + Vite 6 + Vitest 4. RED→GREEN на рендере `App` («Путь ИИ»).
+    `vitest` 1 passed, `tsc --noEmit` (strict) 0 ошибок, `eslint` 0, `prettier` чисто,
+    **npm audit: 0 vulnerabilities** (поднял vitest до 4.1.8 — устранён critical GHSA-5xrq-8626-4rwp).
+  - Docker: `docker compose up --build` → db + backend healthcheck'и **healthy**;
+    backend `/health`→200, frontend отдаёт `<title>Путь ИИ</title>`. Порт БД наружу не публикуется.
+  - Добавлены `.gitignore` (защита секретов), `.env.example`, `README.md` проекта, Dockerfile'ы.
+  - **Критерий завершения E0 выполнен и подтверждён командами.**
 - **2026-06-06 — аудит/улучшение (v2, шаг 4).** Добавлены: трек визуала **E7v**
   (SVG/CSS-кит, design tokens, измеримый критерий) и **E9** (`AssetGenerator` + Flux,
   плейсхолдеры без ключа). Усилены: E5 (тест гонки `complete` + UNIQUE), E6 (валидация
