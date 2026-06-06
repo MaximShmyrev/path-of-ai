@@ -1,0 +1,45 @@
+/* Дизайн-токены «Путь ИИ» — единственное место, где допустимы hex-цвета.
+   Тёмное фэнтези в духе олдскульных RPG (Diablo / Dragon Age). Все компоненты
+   ссылаются на эти переменные через var(--...), хардкод цвета вне этого файла
+   запрещён (проверяется тестом). */
+
+:root {
+  /* Палитра */
+  --color-bg: #14100c; /* почти чёрный коричневый — фон мира */
+  --color-surface: #211a13; /* панели */
+  --color-surface-2: #2c2218;
+  --color-parchment: #e8dcc0; /* состаренный пергамент */
+  --color-ink: #2a2018; /* текст по пергаменту */
+  --color-text: #d8c9a8; /* основной текст по тёмному */
+  --color-text-dim: #9a8a6a;
+  --color-gold: #c8a24a; /* акцент, опыт, награды */
+  --color-gold-bright: #e6c574;
+  --color-frame: #6b4f2a; /* бронзовые рамки */
+  --color-frame-light: #8c6a38;
+  --color-blood: #7a2222; /* опасность / босс */
+  --color-available: #4a7a44; /* доступно */
+  --color-locked: #4a423a; /* заблокировано */
+  --color-completed: #b89030; /* пройдено */
+
+  /* Типографика */
+  --font-heading: 'Georgia', 'Times New Roman', serif;
+  --font-body: 'Georgia', 'Iowan Old Style', serif;
+
+  /* Отступы (шкала) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+
+  /* Прочее */
+  --radius: 4px;
+  --frame-width: 3px;
+  --color-scrim: rgba(0, 0, 0, 0.7); /* затемнение под оверлеями */
+  --shadow-deep: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --vignette: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}

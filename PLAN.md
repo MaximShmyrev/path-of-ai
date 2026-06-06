@@ -420,6 +420,16 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E7v закрыт (визуальная идентичность + SVG/CSS-кит).**
+  - Дизайн-токены `theme/tokens.css` (палитра тёмного фэнтези, типографика, отступы,
+    тени/виньетка/scrim) — единственное место с hex. Базовые стили `theme/kit.css` (var only).
+  - SVG/CSS-компоненты: `XpBar`, `QuestIcon` (свиток/наковальня/череп), `LocationMarker`
+    (available/locked/completed), `LevelUpOverlay`, `Button`, `WindowFrame`, `WorldMap`
+    (регионы+маркеры из данных), слоты артов `HeroPortrait`/`LocationArt` (плейсхолдеры до E9).
+  - TDD-срезы: рендер/поведение каждого компонента + **снапшоты** ключевых + **гварды**
+    (0 хардкод-hex вне tokens.css, 0 растра в хроме — измеримый критерий §8).
+  - **Факты:** `vitest` **32 passed** (11 файлов), `tsc --strict` 0, `eslint` 0, `prettier`
+    чисто, `npm audit` 0; `npm run build` — production-сборка успешна. Закрыт §8 (визуал).
 - **2026-06-06 — E6 закрыт (`StoryGenerator` GLM + банк + `/event`).**
   - `app/story.py`: шов `EventAdapter`; `SeedBankAdapter` (детерминированный банк из seed,
     выбор стабилен по контексту), `GlmAdapter` (Anthropic-совместимый SDK, live-only),

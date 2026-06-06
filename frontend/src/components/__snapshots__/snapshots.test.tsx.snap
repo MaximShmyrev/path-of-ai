@@ -1,0 +1,242 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Снапшоты кита > HeroPortrait placeholder 1`] = `
+<svg
+  aria-label="Портрет: model-mage"
+  class="art-placeholder"
+  height="160"
+  role="img"
+  viewBox="0 0 100 100"
+  width="160"
+>
+  <title>
+    Портрет: model-mage
+  </title>
+  <circle
+    cx="50"
+    cy="38"
+    fill="var(--color-frame-light)"
+    r="18"
+  />
+  <path
+    d="M22 86c0-16 12-26 28-26s28 10 28 26z"
+    fill="var(--color-frame)"
+  />
+</svg>
+`;
+
+exports[`Снапшоты кита > LevelUpOverlay 1`] = `
+<div
+  aria-label="Повышение уровня"
+  class="levelup-overlay"
+  role="dialog"
+>
+  <div
+    class="levelup-overlay__card"
+  >
+    <h2>
+      Новый уровень!
+    </h2>
+    <p>
+      Уровень 
+      4
+    </p>
+  </div>
+</div>
+`;
+
+exports[`Снапшоты кита > LocationMarker (все статусы) 1`] = `
+<div>
+  <svg
+    aria-label="Доступно"
+    height="28"
+    role="img"
+    viewBox="0 0 24 24"
+    width="28"
+  >
+    <title>
+      Доступно
+    </title>
+    <circle
+      cx="12"
+      cy="12"
+      fill="var(--color-available)"
+      r="9"
+      stroke="var(--color-frame)"
+      stroke-width="2"
+    />
+  </svg>
+  <svg
+    aria-label="Заблокировано"
+    height="28"
+    role="img"
+    viewBox="0 0 24 24"
+    width="28"
+  >
+    <title>
+      Заблокировано
+    </title>
+    <circle
+      cx="12"
+      cy="12"
+      fill="var(--color-locked)"
+      r="9"
+      stroke="var(--color-frame)"
+      stroke-width="2"
+    />
+    <rect
+      fill="var(--color-text-dim)"
+      height="5"
+      width="6"
+      x="9"
+      y="11"
+    />
+  </svg>
+  <svg
+    aria-label="Пройдено"
+    height="28"
+    role="img"
+    viewBox="0 0 24 24"
+    width="28"
+  >
+    <title>
+      Пройдено
+    </title>
+    <circle
+      cx="12"
+      cy="12"
+      fill="var(--color-completed)"
+      r="9"
+      stroke="var(--color-frame)"
+      stroke-width="2"
+    />
+    <path
+      d="M8 12l3 3 5-6"
+      fill="none"
+      stroke="var(--color-ink)"
+      stroke-width="2"
+    />
+  </svg>
+</div>
+`;
+
+exports[`Снапшоты кита > QuestIcon (все виды) 1`] = `
+<div>
+  <svg
+    aria-label="Свиток теории"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <title>
+      Свиток теории
+    </title>
+    <path
+      d="M5 3h14v18l-3-2-3 2-3-2-2 2V3z"
+      fill="var(--color-gold)"
+    />
+  </svg>
+  <svg
+    aria-label="Практическое испытание"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <title>
+      Практическое испытание
+    </title>
+    <path
+      d="M3 14h18l-2 5H5l-2-5zm4-9h6l3 4H4l3-4z"
+      fill="var(--color-frame-light)"
+    />
+  </svg>
+  <svg
+    aria-label="Босс"
+    height="24"
+    role="img"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <title>
+      Босс
+    </title>
+    <path
+      d="M12 2a8 8 0 0 0-5 14v4h10v-4a8 8 0 0 0-5-14zM9 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"
+      fill="var(--color-blood)"
+    />
+  </svg>
+</div>
+`;
+
+exports[`Снапшоты кита > WorldMap 1`] = `
+<div
+  class="world-map"
+>
+  <section
+    class="world-map__region"
+    data-status="open"
+  >
+    <h3
+      class="world-map__region-title"
+    >
+      Долина основ ML
+    </h3>
+    <ul
+      class="world-map__nodes"
+    >
+      <li
+        class="world-map__node"
+      >
+        <button
+          class="world-map__node-button"
+          disabled=""
+          type="button"
+        >
+          <svg
+            aria-label="Доступно"
+            height="28"
+            role="img"
+            viewBox="0 0 24 24"
+            width="28"
+          >
+            <title>
+              Доступно
+            </title>
+            <circle
+              cx="12"
+              cy="12"
+              fill="var(--color-available)"
+              r="9"
+              stroke="var(--color-frame)"
+              stroke-width="2"
+            />
+          </svg>
+          <span
+            class="world-map__node-title"
+          >
+            Базис
+          </span>
+        </button>
+      </li>
+    </ul>
+  </section>
+</div>
+`;
+
+exports[`Снапшоты кита > XpBar 1`] = `
+<div
+  aria-label="Опыт"
+  aria-valuemax="100"
+  aria-valuemin="0"
+  aria-valuenow="40"
+  class="xp-bar"
+  role="progressbar"
+>
+  <div
+    class="xp-bar__fill"
+    style="width: 40%; background: var(--color-gold);"
+  />
+</div>
+`;

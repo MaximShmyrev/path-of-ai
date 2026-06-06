@@ -1,0 +1,145 @@
+/* Базовые стили UI-кита. Только var(--...) — без хардкода hex. */
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  background-image: var(--vignette);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+  color: var(--color-gold-bright);
+}
+
+/* XP-бар */
+.xp-bar {
+  position: relative;
+  height: 16px;
+  border: var(--frame-width) solid var(--color-frame);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.xp-bar__fill {
+  height: 100%;
+  background: var(--color-gold);
+  transition: width 0.4s ease;
+}
+
+/* Кнопка */
+.button {
+  font-family: var(--font-heading);
+  color: var(--color-parchment);
+  background: var(--color-surface-2);
+  border: var(--frame-width) solid var(--color-frame);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold-bright);
+}
+
+.button:disabled {
+  color: var(--color-text-dim);
+  border-color: var(--color-locked);
+  cursor: not-allowed;
+}
+
+/* Декоративная рамка окна */
+.window-frame {
+  border: var(--frame-width) solid var(--color-frame);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-deep);
+  padding: var(--space-3);
+}
+
+.window-frame__title {
+  margin: 0 0 var(--space-2);
+}
+
+/* Оверлей повышения уровня */
+.levelup-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-scrim);
+}
+
+.levelup-overlay__card {
+  text-align: center;
+  padding: var(--space-5);
+  border: var(--frame-width) solid var(--color-gold);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-deep);
+}
+
+/* Карта мира */
+.world-map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.world-map__region {
+  flex: 1 1 240px;
+  border: var(--frame-width) solid var(--color-frame);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: var(--space-3);
+}
+
+.world-map__region[data-status='locked'] {
+  opacity: 0.55;
+  border-color: var(--color-locked);
+}
+
+.world-map__nodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.world-map__node-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-align: left;
+}
+
+.world-map__node-button:disabled {
+  color: var(--color-text-dim);
+  cursor: not-allowed;
+}
+
+/* Слоты под рисованные арты (заполняются в E9) */
+.art-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-2);
+  border: var(--frame-width) solid var(--color-frame);
+  border-radius: var(--radius);
+  color: var(--color-text-dim);
+}
