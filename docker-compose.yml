@@ -21,7 +21,7 @@ services:
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-pathofai}:${POSTGRES_PASSWORD:-pathofai}@db:5432/${POSTGRES_DB:-pathofai}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pathofai}:${POSTGRES_PASSWORD:-pathofai}@db:5432/${POSTGRES_DB:-pathofai}
       # Опциональные ключи (см. .env.example). Пусто → работают фоллбэки.
       GLM_API_KEY: ${GLM_API_KEY:-}
       GLM_BASE_URL: ${GLM_BASE_URL:-}

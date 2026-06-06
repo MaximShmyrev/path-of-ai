@@ -274,6 +274,15 @@ def create_app(
         """Liveness-проба, не зависит от БД (PLAN E0)."""
         return {"status": "ok"}
 
+    @app.get("/health/ready")
+    def ready(request: Request) -> dict[str, str]:
+        """Readiness: проверяет доступность хранилища (БД)."""
+        try:
+            _store(request).load_hero()
+        except Exception as exc:  # noqa: BLE001 — наружу отдаём 503
+            raise HTTPException(status_code=503, detail="Хранилище недоступно") from exc
+        return {"status": "ready"}
+
     _register_error_handlers(app)
     app.include_router(router)
     return app

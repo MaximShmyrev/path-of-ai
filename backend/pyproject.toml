@@ -8,6 +8,8 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "pydantic>=2.9",
     "pyyaml>=6.0",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2",
 ]
 
 [dependency-groups]
@@ -22,6 +24,7 @@ dev = [
     # пакета — копирует в mutants/ только мутируемый файл).
     "mutmut>=2.4,<3",
     "types-pyyaml>=6.0",
+    "testcontainers[postgres]>=4.8",
 ]
 
 [tool.ruff]
@@ -35,6 +38,10 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.11"
 strict = true
 files = ["app", "tests"]
+
+[[tool.mypy.overrides]]
+module = "testcontainers.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

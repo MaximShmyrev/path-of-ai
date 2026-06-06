@@ -420,6 +420,20 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E5 закрыт (персистентность PostgreSQL).**
+  - `app/db.py`: ORM-модели `HeroRow`/`QuestProgressRow` (SQLAlchemy 2.0 sync, psycopg v3),
+    `UNIQUE(hero_id, quest_id)`, `create_schema`/`reset_schema`.
+  - `app/state.py`: `SqlAlchemyStore` (load/save/complete) + `CompletionOutcome`; `complete`
+    атомарен (UNIQUE + относительный SQL-инкремент XP в транзакции). `StateStore`/`InMemoryStore`
+    получили `complete`; `QuestService.complete_quest` переведён на атомарный путь.
+  - `/health/ready` (проверка БД); `app/main.py` строит `SqlAlchemyStore` из `DATABASE_URL`
+    (схема создаётся при старте). `test_health` переведён на `create_app()`.
+  - Решения (см. SPEC §11): sync вместо async, `create_all` вместо Alembic (отложен).
+  - TDD/интеграционные тесты (testcontainers Postgres): round-trip, complete-persist,
+    авто-создание схемы, **выживание при перезапуске (§7.6)**, **гонка complete → XP один раз**.
+  - **Факты:** `pytest` **94 passed**; coverage `api` 100% / `db` 100% / `state` 95% / TOTAL 97%;
+    `mypy --strict` 0; `ruff`/format чисто. **Docker:** create→complete→`restart backend`→
+    `GET /api/hero` сохранил total_xp=150/level=2; `/health/ready`→200. Закрыт §7.6 + инвариант гонки.
 - **2026-06-06 — E4 закрыт (HTTP API + анти-чит).**
   - `app/api.py` (тонкий adapter): `create_app(catalog?, store?)`, эндпоинты
     `POST/GET /api/hero`, `GET /api/map`, `GET /api/topics/{id}`,

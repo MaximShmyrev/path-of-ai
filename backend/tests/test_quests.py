@@ -143,6 +143,23 @@ class TestPrerequisiteFlow:
         assert result.gained_xp == 150
 
 
+class TestInMemoryStore:
+    def test_complete_is_idempotent(self) -> None:
+        store = InMemoryStore()
+        store.save_hero(_hero())
+        first = store.complete("q-1", 100)
+        second = store.complete("q-1", 100)
+        assert first.already_completed is False
+        assert second.already_completed is True
+        loaded = store.load_hero()
+        assert loaded is not None
+        assert loaded.total_xp == 100  # повтор не начисляет
+
+    def test_complete_without_hero_raises(self) -> None:
+        with pytest.raises(LookupError):
+            InMemoryStore().complete("q-1", 100)
+
+
 class TestErrors:
     def test_unknown_quest_raises(self) -> None:
         service, _ = _service(_hero())

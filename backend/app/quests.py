@@ -5,7 +5,7 @@
 валидация сдачи → начисление XP → сохранение → новые разблокировки.
 """
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 
 from app.catalog import Catalog
 from app.domain import HeroRecord, HeroState, Quest, UnlockState
@@ -127,13 +127,19 @@ class QuestService:
 
         modifier = class_modifier(state.hero_class, quest.region_id)
         awarded = award_xp(curve, state, quest.xp, modifier)
-        new_hero = replace(
-            hero,
-            total_xp=awarded.state.total_xp,
-            completed_quests=hero.completed_quests | {quest_id},
-        )
-        self.store.save_hero(new_hero)
+        # Атомарная запись: при гонке параллельный запрос мог зачесть квест первым.
+        outcome = self.store.complete(quest_id, awarded.gained_xp)
+        if outcome.already_completed:
+            return CompletionResult(
+                hero=outcome.hero,
+                gained_xp=0,
+                leveled_up=False,
+                new_level=curve.level_for_xp(outcome.hero.total_xp),
+                newly_unlocked_regions=frozenset(),
+                already_completed=True,
+            )
 
+        new_hero = outcome.hero
         unlocks_after = recompute_unlocks(
             curve, self._hero_state(new_hero), self.catalog
         )
