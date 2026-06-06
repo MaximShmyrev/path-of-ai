@@ -420,6 +420,20 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E6 закрыт (`StoryGenerator` GLM + банк + `/event`).**
+  - `app/story.py`: шов `EventAdapter`; `SeedBankAdapter` (детерминированный банк из seed,
+    выбор стабилен по контексту), `GlmAdapter` (Anthropic-совместимый SDK, live-only),
+    `StoryGenerator` — основной адаптер + **молчаливый фоллбэк** на банк при сбое/мусоре,
+    **валидация выхода** (русский / лимит длины / без управляющих байтов / непустой).
+  - Домен: `EventContext`, `StoryEvent`, `EventSource`. Каталог: `events_bank` из seed.
+    БД: `StoryEventRow`; `StateStore.save_event` (InMemory + SqlAlchemy).
+  - `POST /api/locations/{id}/event`: 404 (нет темы/события выключены/нет героя),
+    423 (locked), иначе **всегда 200** с `source: glm|bank`; событие сохраняется.
+    Проводка `StoryGenerator` в `create_app` (GLM по `GLM_API_KEY`+`GLM_BASE_URL`, иначе банк).
+  - Live-тест GLM помечен `live_llm` и **исключён** из обычного прогона (`-m 'not live_llm'`).
+  - **Факты:** `pytest` **108 passed, 1 deselected**; coverage `api` 100% / `story` 92% /
+    `state` 93% / TOTAL 97%; `mypy --strict` 0; `ruff`/format чисто. **Docker:** `/event`
+    без ключа → `source:"bank"` (русский текст), locked → 423. Закрыт §7.7.
 - **2026-06-06 — E5 закрыт (персистентность PostgreSQL).**
   - `app/db.py`: ORM-модели `HeroRow`/`QuestProgressRow` (SQLAlchemy 2.0 sync, psycopg v3),
     `UNIQUE(hero_id, quest_id)`, `create_schema`/`reset_schema`.

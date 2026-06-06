@@ -8,11 +8,11 @@ import threading
 from collections.abc import Iterator
 
 import pytest
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, create_engine, func, select
 from testcontainers.postgres import PostgresContainer
 
-from app.db import Base, reset_schema
-from app.domain import HeroRecord
+from app.db import Base, StoryEventRow, reset_schema
+from app.domain import HeroRecord, StoryEvent
 from app.state import SqlAlchemyStore
 
 
@@ -59,6 +59,15 @@ class TestRoundTrip:
         assert loaded is not None
         assert loaded.total_xp == 150
         assert "q-1" in loaded.completed_quests
+
+    def test_save_event_persists(self, store: SqlAlchemyStore, engine: Engine) -> None:
+        store.save_hero(_hero())
+        store.save_event("supervised-basics", StoryEvent(text="Событие", source="bank"))
+        with engine.connect() as conn:
+            count = conn.execute(
+                select(func.count()).select_from(StoryEventRow)
+            ).scalar_one()
+        assert count == 1
 
 
 class TestSchemaAutoCreate:

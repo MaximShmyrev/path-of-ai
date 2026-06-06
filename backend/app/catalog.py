@@ -79,6 +79,7 @@ class _RawProgression(BaseModel):
 class _RawSeed(BaseModel):
     progression: _RawProgression
     classes: list[_RawClass] = []
+    events_bank: list[str] = []
     regions: list[_RawRegion]
 
 
@@ -126,6 +127,7 @@ class Catalog:
     topics: tuple[Topic, ...]
     quests: tuple[Quest, ...]
     classes: tuple[HeroClass, ...]
+    events_bank: tuple[str, ...] = ()
 
     @cached_property
     def _region_by_id(self) -> dict[str, Region]:
@@ -217,6 +219,7 @@ def load_catalog(source: ContentSource) -> Catalog:
         topics=topics,
         quests=quests,
         classes=classes,
+        events_bank=tuple(seed.events_bank),
     )
     _validate_semantics(catalog)
     return catalog

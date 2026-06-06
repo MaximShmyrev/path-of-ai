@@ -10,6 +10,7 @@ dependencies = [
     "pyyaml>=6.0",
     "sqlalchemy>=2.0",
     "psycopg[binary]>=3.2",
+    "anthropic>=0.40",
 ]
 
 [dependency-groups]
@@ -45,10 +46,12 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-addopts = "-q"
+# Живые LLM-тесты исключены из обязательного прогона (SPEC §2.1, §8).
+addopts = "-q -m 'not live_llm'"
 testpaths = ["tests"]
 pythonpath = ["."]
 filterwarnings = ["error"]
+markers = ["live_llm: требует реального GLM_API_KEY (сетевой вызов)"]
 
 [tool.coverage.run]
 branch = true

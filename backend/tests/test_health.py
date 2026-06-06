@@ -8,7 +8,7 @@ import httpx
 from httpx import ASGITransport
 
 from app.api import create_app
-from app.domain import HeroRecord
+from app.domain import HeroRecord, StoryEvent
 from app.state import CompletionOutcome
 
 
@@ -24,6 +24,11 @@ class _FailingStore:
     def complete(
         self, quest_id: str, gained_xp: int
     ) -> CompletionOutcome:  # pragma: no cover
+        raise RuntimeError("БД недоступна")
+
+    def save_event(
+        self, location_id: str, event: StoryEvent
+    ) -> None:  # pragma: no cover
         raise RuntimeError("БД недоступна")
 
 

@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
 from app.catalog import Catalog, default_catalog
-from app.domain import HeroRecord, QuestKind, TopicStatus
+from app.domain import EventContext, EventSource, HeroRecord, QuestKind, TopicStatus
 from app.progression import LevelCurve
 from app.quests import (
     HeroNotFound,
@@ -26,6 +26,7 @@ from app.quests import (
     QuizSubmission,
 )
 from app.state import InMemoryStore, StateStore
+from app.story import GlmAdapter, SeedBankAdapter, StoryGenerator
 
 router = APIRouter(prefix="/api")
 
@@ -108,6 +109,11 @@ class CompleteResponse(BaseModel):
     newly_unlocked_regions: list[str]
     already_completed: bool
     hero: HeroResponse
+
+
+class EventResponse(BaseModel):
+    text: str
+    source: EventSource
 
 
 # --- Вспомогательные ---
@@ -250,16 +256,63 @@ def complete_quest(
     )
 
 
+@router.post("/locations/{location_id}/event", response_model=EventResponse)
+def location_event(location_id: str, request: Request) -> EventResponse:
+    catalog = _catalog(request)
+    service = _service(request)
+    store = _store(request)
+    story: StoryGenerator = request.app.state.story
+
+    hero = service.load_hero()  # HeroNotFound → 404
+    try:
+        topic = catalog.topic(location_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Локация не найдена") from exc
+    if not topic.events:
+        raise HTTPException(
+            status_code=404, detail="События недоступны для этой локации"
+        )
+    if service.unlocks_for(hero).topic_status[location_id] == "locked":
+        raise HTTPException(status_code=423, detail="Локация заблокирована")
+
+    region = catalog.region(topic.region_id)
+    event = story.generate_event(
+        EventContext(
+            hero_name=hero.name,
+            hero_level=service.level_of(hero),
+            region_title=region.title,
+            topic_title=topic.title,
+        )
+    )
+    store.save_event(location_id, event)
+    return EventResponse(text=event.text, source=event.source)
+
+
 # --- Сборка приложения ---
 
 
+def _build_story(catalog: Catalog) -> StoryGenerator:
+    """Сборка генератора событий: банк из seed + опциональный GLM по ключу из env."""
+    bank = SeedBankAdapter(templates=catalog.events_bank)
+    api_key = os.environ.get("GLM_API_KEY")
+    base_url = os.environ.get("GLM_BASE_URL")
+    primary = (
+        GlmAdapter(api_key=api_key, base_url=base_url) if api_key and base_url else None
+    )
+    return StoryGenerator(fallback=bank, primary=primary)
+
+
 def create_app(
-    catalog: Catalog | None = None, store: StateStore | None = None
+    catalog: Catalog | None = None,
+    store: StateStore | None = None,
+    story: StoryGenerator | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Путь ИИ — backend")
     # Каталог грузится один раз при старте (O(1)-индексы кэшируются, SPEC §9).
-    app.state.catalog = catalog if catalog is not None else default_catalog()
+    resolved_catalog = catalog if catalog is not None else default_catalog()
+    app.state.catalog = resolved_catalog
     app.state.store = store if store is not None else InMemoryStore()
+    app.state.story = story if story is not None else _build_story(resolved_catalog)
 
     origins = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173").split(",")
     app.add_middleware(

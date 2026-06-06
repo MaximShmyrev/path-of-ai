@@ -121,3 +121,24 @@ class Catalog(Protocol):
 
     @property
     def topics(self) -> Sequence[Topic]: ...
+
+
+EventSource = Literal["glm", "bank"]
+
+
+@dataclass(frozen=True)
+class EventContext:
+    """Контекст для генерации сюжетного события (SPEC §7.7)."""
+
+    hero_name: str
+    hero_level: int
+    region_title: str
+    topic_title: str
+
+
+@dataclass(frozen=True)
+class StoryEvent:
+    """Сгенерированное событие и его источник."""
+
+    text: str
+    source: EventSource

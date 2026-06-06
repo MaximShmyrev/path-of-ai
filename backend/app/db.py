@@ -53,6 +53,19 @@ class QuestProgressRow(Base):
     )
 
 
+class StoryEventRow(Base):
+    __tablename__ = "story_event"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    hero_id: Mapped[int] = mapped_column(ForeignKey("heroes.id"))
+    location_id: Mapped[str] = mapped_column(String(128))
+    text: Mapped[str] = mapped_column(String(2000))
+    source: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 def create_schema(engine: Engine) -> None:
     """Создать таблицы, если их ещё нет (применяется при старте, PLAN E5)."""
     Base.metadata.create_all(engine)

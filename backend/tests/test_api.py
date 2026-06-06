@@ -273,3 +273,58 @@ class TestComplete:
         assert body["leveled_up"] is True
         assert body["new_level"] == 2
         assert "llm" in body["newly_unlocked_regions"]
+
+
+class TestEvent:
+    async def test_event_returns_bank_source(
+        self, client_store: tuple[httpx.AsyncClient, InMemoryStore]
+    ) -> None:
+        # SPEC §7.7: без ключа GLM событие приходит из банка, всегда 200.
+        client, _ = client_store
+        await _create_hero(client)
+        resp = await client.post("/api/locations/supervised-basics/event")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["source"] == "bank"
+        assert body["text"]
+
+    async def test_event_is_persisted(
+        self, client_store: tuple[httpx.AsyncClient, InMemoryStore]
+    ) -> None:
+        client, store = client_store
+        await _create_hero(client)
+        await client.post("/api/locations/supervised-basics/event")
+        assert len(store.events) == 1
+        assert store.events[0][0] == "supervised-basics"
+
+    async def test_event_404_unknown_location(
+        self, client_store: tuple[httpx.AsyncClient, InMemoryStore]
+    ) -> None:
+        client, _ = client_store
+        await _create_hero(client)
+        resp = await client.post("/api/locations/ghost/event")
+        assert resp.status_code == 404
+
+    async def test_event_404_when_events_disabled(
+        self, client_store: tuple[httpx.AsyncClient, InMemoryStore]
+    ) -> None:
+        client, _ = client_store
+        await _create_hero(client)
+        resp = await client.post("/api/locations/feature-engineering/event")
+        assert resp.status_code == 404
+
+    async def test_event_404_without_hero(
+        self, client_store: tuple[httpx.AsyncClient, InMemoryStore]
+    ) -> None:
+        client, _ = client_store
+        resp = await client.post("/api/locations/supervised-basics/event")
+        assert resp.status_code == 404
+
+    async def test_event_423_when_locked(
+        self, client_store: tuple[httpx.AsyncClient, InMemoryStore]
+    ) -> None:
+        # fine-tuning: events=true, но регион llm заблокирован на старте.
+        client, _ = client_store
+        await _create_hero(client)
+        resp = await client.post("/api/locations/fine-tuning/event")
+        assert resp.status_code == 423

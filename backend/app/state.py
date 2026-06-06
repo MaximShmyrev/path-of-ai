@@ -15,8 +15,8 @@ from sqlalchemy import Engine, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.db import HeroRow, QuestProgressRow, create_schema
-from app.domain import HeroRecord
+from app.db import HeroRow, QuestProgressRow, StoryEventRow, create_schema
+from app.domain import HeroRecord, StoryEvent
 
 
 @dataclass(frozen=True)
@@ -34,18 +34,24 @@ class StateStore(Protocol):
 
     def complete(self, quest_id: str, gained_xp: int) -> CompletionOutcome: ...
 
+    def save_event(self, location_id: str, event: StoryEvent) -> None: ...
+
 
 class InMemoryStore:
     """Хранилище в памяти на одного локального игрока."""
 
     def __init__(self) -> None:
         self._hero: HeroRecord | None = None
+        self.events: list[tuple[str, StoryEvent]] = []
 
     def load_hero(self) -> HeroRecord | None:
         return self._hero
 
     def save_hero(self, hero: HeroRecord) -> None:
         self._hero = hero
+
+    def save_event(self, location_id: str, event: StoryEvent) -> None:
+        self.events.append((location_id, event))
 
     def complete(self, quest_id: str, gained_xp: int) -> CompletionOutcome:
         if self._hero is None:
@@ -132,3 +138,18 @@ class SqlAlchemyStore:
             )
             session.commit()
         return CompletionOutcome(already_completed=False, hero=self._require_hero())
+
+    def save_event(self, location_id: str, event: StoryEvent) -> None:
+        with self._session() as session:
+            row = session.execute(select(HeroRow)).scalars().first()
+            if row is None:
+                raise LookupError("Герой не создан")
+            session.add(
+                StoryEventRow(
+                    hero_id=row.id,
+                    location_id=location_id,
+                    text=event.text,
+                    source=event.source,
+                )
+            )
+            session.commit()
