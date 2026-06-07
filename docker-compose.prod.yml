@@ -1,0 +1,56 @@
+# Прод-стек «Путь ИИ» для самохостинга (Mac mini).
+# Фронтенд — статика за nginx, проксирует /api на backend (один origin, без CORS).
+# Запуск: docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pathofai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pathofai}
+      POSTGRES_DB: ${POSTGRES_DB:-pathofai}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pathofai}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pathofai}:${POSTGRES_PASSWORD:-pathofai}@db:5432/${POSTGRES_DB:-pathofai}
+      GLM_API_KEY: ${GLM_API_KEY:-}
+      GLM_BASE_URL: ${GLM_BASE_URL:-}
+      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
