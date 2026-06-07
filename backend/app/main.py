@@ -8,11 +8,11 @@ from app.api import create_app
 from app.state import SqlAlchemyStore
 
 
-def _build_store() -> SqlAlchemyStore:
+def _build_store() -> SqlAlchemyStore:  # pragma: no cover — продакшен-проводка
     database_url = os.environ["DATABASE_URL"]
     engine = create_engine(database_url, pool_pre_ping=True)
     # Схема создаётся при старте — отдельных ручных шагов нет (PLAN E5).
     return SqlAlchemyStore(engine, create=True)
 
 
-app = create_app(store=_build_store())
+app = create_app(store=_build_store())  # pragma: no cover

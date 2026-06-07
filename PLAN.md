@@ -420,6 +420,29 @@ lint-правило на hard-coded не-русские строки (whitelist 
 > Пополняется по мере выполнения этапов: дата, этап, что сделано, подтверждающие команды.
 
 - **2026-06-06 — план создан (v1).** Этапы E0–E8 под TDD.
+- **2026-06-06 — E8 закрыт (нефункциональные критерии + DoD). ПРОЕКТ MVP ЗАВЕРШЁН.**
+  - Перф: `tests/test_perf.py` — p95 < 200 мс для `/api/map` и `/api/hero` (200 запросов,
+    конкурентность 50, in-process ASGI). e2e: `tests/test_e2e.py` — полный путь
+    создание→карта→локация→квест→level-up→разблокировка→событие.
+  - `Makefile` — воспроизводимые гейты (`make check`, `make backend-mutation`, `make docker-up`).
+  - `frontend/.prettierignore`, coverage-пороги в `vite.config` (lines/funcs/stmts ≥85,
+    branches ≥80; тест-двойник и entry исключены). `main.py` помечен `pragma: no cover` (entry).
+  - **Definition of Done (@Styleguide §2) — подтверждено командами:**
+    - Тесты: backend **120 passed** (2 live deselected), frontend **67 passed**; RED→GREEN
+      виден по всем этапам в этом changelog.
+    - Покрытие: backend ветви **97%** (progression/quests/api/db/domain 100%); frontend
+      строки **97%** / ветви **84%** / функции 100%.
+    - Mutation: backend `progression`+`quests` **89%** (≥70%).
+    - Статика: `ruff`/`mypy --strict`/`eslint`/`tsc --strict`/`prettier` — **0 ошибок**
+      (1 DX-варнинг react-refresh, не ошибка). Без `any`/`ignore` без обоснования.
+    - Перф: p95 < 200 мс (не-LLM) — измерено. Big-O ключевых операций — в докстрингах (§9).
+    - Запуск: `docker compose up` целиком — db+backend healthy, фронтенд отдаёт UI,
+      e2e через API работает, `/health/ready`→200; живой GLM (`source:glm`) подхватился из `.env`.
+    - Визуал: 0 растра в хроме, цвета через токены, снапшоты зелёные (гвард-тесты).
+    - Changelog (SPEC+PLAN) и аргументация решений (SPEC §11) — ведутся.
+  - **Известные осознанные ограничения:** frontend-mutation (Stryker) не настроен —
+    отложен (бизнес-логика ядра покрыта backend-mutation; фронт-логика — высоким покрытием
+    строк/функций). Реальные арты ждут `REPLICATE_API_TOKEN` (работают плейсхолдеры).
 - **2026-06-06 — E9 закрыт (`AssetGenerator` + Flux + рисованные арты).**
   - `app/assets.py`: шов `AssetAdapter`; `PlaceholderAdapter` (детерминированный SVG, без
     сети), `FluxAdapter` (Replicate, live-only, ленивые импорты). `build_specs` (промпты

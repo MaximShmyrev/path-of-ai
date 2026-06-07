@@ -79,9 +79,7 @@ class TestGenerateAssets:
 
 
 class TestSelectAdapter:
-    def test_placeholder_without_token(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_placeholder_without_token(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("REPLICATE_API_TOKEN", raising=False)
         assert isinstance(_select_adapter(), PlaceholderAdapter)
 
