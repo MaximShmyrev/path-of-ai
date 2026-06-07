@@ -35,6 +35,17 @@ describe('WorldMap', () => {
     expect(screen.getByText('Трансформеры')).toBeInTheDocument();
   });
 
+  it('подставляет фон региона из манифеста артов', () => {
+    const regions: RegionView[] = [
+      { id: 'ml-foundations', title: 'Долина', status: 'open', topics: [] },
+    ];
+    const { container } = render(<WorldMap regions={regions} />);
+    const section = container.querySelector('.world-map__region');
+    expect((section as HTMLElement).style.backgroundImage).toContain(
+      'ml-foundations.webp',
+    );
+  });
+
   it('вызывает onEnterTopic для доступной локации', async () => {
     const calls: string[] = [];
     render(
