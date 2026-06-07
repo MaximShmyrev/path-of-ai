@@ -66,9 +66,13 @@ class PlaceholderAdapter:
 
 
 class FluxAdapter:
-    """Генерация через Flux (Replicate). Только live — сетевой вызов."""
+    """Генерация через Flux (Replicate). Только live — сетевой вызов.
 
-    extension = "png"
+    WebP: тот же визуал в ~20× меньшем весе (важно для веб-загрузки), нативно
+    поддерживается браузерами.
+    """
+
+    extension = "webp"
 
     def __init__(self, model: str = "black-forest-labs/flux-schnell") -> None:
         self.model = model
@@ -84,6 +88,7 @@ class FluxAdapter:
                 "prompt": spec.prompt,
                 "width": spec.width,
                 "height": spec.height,
+                "output_format": "webp",
             },
         )
         first = output[0] if isinstance(output, list) else output

@@ -456,7 +456,11 @@ lint-правило на hard-coded не-русские строки (whitelist 
     Фронт: `resolveAsset` (пусто/запись/штатный манифест).
   - **Факты:** backend `pytest` **118 passed, 2 deselected**, `assets` 100% / TOTAL 97%,
     mypy/ruff чисто; фронт `vitest` **53 passed**, tsc/eslint/prettier чисто, build ок.
-    Закрыт §8 (визуал — арты), §10. Реальная генерация ждёт `REPLICATE_API_TOKEN`.
+    Закрыт §8 (визуал — арты), §10.
+  - **2026-06-06 — арты сгенерированы (Flux/Replicate):** 7 WebP-ассетов (3 портрета
+    классов + 4 фона регионов, 1024², ~524 КБ всего) в `frontend/public/assets/`,
+    манифест заполнен. Формат WebP (output_format) — в ~20× легче PNG. Фронтенд
+    показывает портрет класса в `CharacterCreation` вместо плейсхолдера.
 - **2026-06-06 — E7b закрыт (фронтенд: локация/квест/level-up/событие).**
   - Стор расширен: экран `location`, действия `enterTopic/leaveTopic/submitQuest/
     requestEvent/dismissLevelUp/dismissEvent`, состояние topic/levelUp/event/questError.

@@ -13,7 +13,9 @@ describe('resolveAsset', () => {
     ).toBe('/assets/classes/model-mage.png');
   });
 
-  it('штатный манифест пуст → плейсхолдеры (арты подключатся после генерации)', () => {
-    expect(resolveAsset('model-mage')).toBeUndefined();
+  it('штатный манифест: сгенерированный арт резолвится в /assets/...', () => {
+    // После генерации (E9) арты подключены; для отсутствующего id — undefined.
+    expect(resolveAsset('model-mage')).toBe('/assets/classes/model-mage.webp');
+    expect(resolveAsset('нет-такого')).toBeUndefined();
   });
 });
