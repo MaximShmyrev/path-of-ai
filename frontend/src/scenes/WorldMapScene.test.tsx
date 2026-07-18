@@ -26,10 +26,11 @@ describe('WorldMapScene (§7.2 ui)', () => {
 
   it('показывает уровень героя и прогресс', async () => {
     await renderWithHero();
+    // Уровень и опыт теперь живут в нижней HUD-панели (орб опыта = role meter).
     expect(
       screen.getByText(new RegExp(`${ru.map.level}\\s*1`)),
     ).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole('meter', { name: ru.hud.xp })).toBeInTheDocument();
   });
 
   it('рисует маркеры локаций', async () => {

@@ -87,6 +87,9 @@ class QuizQuestion:
     prompt: str
     options: tuple[str, ...]
     answer: int
+    explanation: str = (
+        ""  # разбор: почему ответ верный/неверный (показывается после ответа)
+    )
 
 
 @dataclass(frozen=True)
@@ -99,6 +102,7 @@ class Quest:
     xp: int
     topic_id: str
     region_id: str
+    body: str = ""  # урок (markdown) для theory-квеста; «сердце» обучения
     quiz: tuple[QuizQuestion, ...] = ()
 
 

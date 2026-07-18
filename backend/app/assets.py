@@ -20,6 +20,12 @@ STYLE = (
     "muted gold and bronze palette, no text, no watermark"
 )
 
+# Стиль текстур UI-хрома (Diablo II). Бесшовные/тайлящиеся фактуры и фоны.
+UI_STYLE = (
+    "Diablo II game UI texture, dark gothic fantasy, ornate weathered bronze and "
+    "gold, carved stone, muted palette, painterly, no text, no watermark"
+)
+
 
 @dataclass(frozen=True)
 class AssetSpec:
@@ -120,6 +126,61 @@ def build_specs(catalog: Catalog) -> list[AssetSpec]:
     return specs
 
 
+def build_ui_specs() -> list[AssetSpec]:
+    """Текстуры UI-хрома (Diablo II): пергамент, камень, кнопка, фон карты.
+
+    Ровно те текстуры, которые потребляет kit.css через --tex-* (рамки и орбы
+    рисуются чистым CSS). id совпадают с ключами в textures.ts.
+    """
+    return [
+        AssetSpec(
+            id="ui-parchment",
+            category="ui",
+            prompt=(
+                "seamless aged parchment paper texture, weathered vellum, "
+                f"subtle stains and creases, {UI_STYLE}, tileable"
+            ),
+        ),
+        AssetSpec(
+            id="ui-stone",
+            category="ui",
+            prompt=(
+                "seamless dark carved stone slab texture, gothic dungeon wall, "
+                f"cracked granite, {UI_STYLE}, tileable"
+            ),
+        ),
+        AssetSpec(
+            id="ui-button",
+            category="ui",
+            prompt=(
+                "ornate dark bronze metal plate, embossed gothic frame, "
+                f"weathered relief, {UI_STYLE}"
+            ),
+        ),
+        AssetSpec(
+            id="ui-map-bg",
+            category="ui",
+            prompt=(
+                "dark fantasy world map backdrop, ancient cartography, foggy "
+                f"gothic atmosphere, deep vignette, {UI_STYLE}"
+            ),
+            width=1024,
+            height=768,
+        ),
+        AssetSpec(
+            id="ui-worldmap",
+            category="ui",
+            prompt=(
+                "hand-drawn fantasy world map in the style of Middle-earth, aged "
+                "parchment continent with mountain ranges, rivers, forests and a "
+                f"winding road, ink cartography, {UI_STYLE}"
+            ),
+            width=1280,
+            height=800,
+        ),
+    ]
+
+
 def generate_assets(
     adapter: AssetAdapter,
     specs: list[AssetSpec],
@@ -154,7 +215,12 @@ def main() -> None:  # pragma: no cover — CLI
     root = Path(__file__).resolve().parents[2]
     out_dir = root / "frontend" / "public" / "assets"
     adapter = _select_adapter()
-    refs = generate_assets(adapter, build_specs(default_catalog()), out_dir)
+    specs = build_specs(default_catalog())
+    # UI-текстуры генерируем только живым Flux: SVG-плейсхолдеры здесь хуже, чем
+    # CSS-градиентные фолбэки из tokens.css, и не должны попадать в манифест.
+    if isinstance(adapter, FluxAdapter):
+        specs += build_ui_specs()
+    refs = generate_assets(adapter, specs, out_dir)
     # Импортируемый фронтендом манифест (src/theme/assetManifest.json).
     manifest = {ref.id: ref.path for ref in refs}
     src_manifest = root / "frontend" / "src" / "theme" / "assetManifest.json"

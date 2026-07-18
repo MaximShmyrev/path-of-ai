@@ -26,10 +26,11 @@ export function LocationView() {
       ))}
       <EventDialog />
       {state.levelUpLevel !== null && (
-        <div>
-          <LevelUpOverlay visible level={state.levelUpLevel} />
-          <Button onClick={dismissLevelUp}>{ru.levelup.dismiss}</Button>
-        </div>
+        <LevelUpOverlay
+          visible
+          level={state.levelUpLevel}
+          onDismiss={dismissLevelUp}
+        />
       )}
     </WindowFrame>
   );

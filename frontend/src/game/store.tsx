@@ -21,8 +21,12 @@ import type {
 
 export type Screen = 'loading' | 'create' | 'map' | 'location';
 
+/** Оверлей-панель персонажа (как C/I в Diablo). */
+export type Panel = 'character' | 'inventory' | 'skills' | null;
+
 export type GameState = {
   screen: Screen;
+  panel: Panel;
   hero: HeroView | null;
   map: MapView | null;
   topic: TopicView | null;
@@ -52,10 +56,13 @@ type Action =
   | { type: 'event'; event: EventView }
   | { type: 'dismissEvent' }
   | { type: 'busy'; busy: boolean }
+  | { type: 'openPanel'; panel: Exclude<Panel, null> }
+  | { type: 'closePanel' }
   | { type: 'error'; message: string };
 
 const initialState: GameState = {
   screen: 'loading',
+  panel: null,
   hero: null,
   map: null,
   topic: null,
@@ -111,6 +118,10 @@ function reducer(state: GameState, action: Action): GameState {
       return { ...state, event: null };
     case 'busy':
       return { ...state, busy: action.busy };
+    case 'openPanel':
+      return { ...state, panel: action.panel };
+    case 'closePanel':
+      return { ...state, panel: null };
     case 'error':
       return { ...state, error: action.message };
   }
@@ -134,6 +145,8 @@ export type Game = {
   dismissLevelUp: () => void;
   requestEvent: (locationId: string) => Promise<void>;
   dismissEvent: () => void;
+  openPanel: (panel: Exclude<Panel, null>) => void;
+  closePanel: () => void;
 };
 
 const GameContext = createContext<Game | null>(null);
@@ -257,6 +270,14 @@ export function GameProvider({ api, children }: GameProviderProps) {
     dispatch({ type: 'dismissEvent' });
   }, []);
 
+  const openPanel = useCallback((panel: Exclude<Panel, null>) => {
+    dispatch({ type: 'openPanel', panel });
+  }, []);
+
+  const closePanel = useCallback(() => {
+    dispatch({ type: 'closePanel' });
+  }, []);
+
   const value = useMemo<Game>(
     () => ({
       state,
@@ -268,6 +289,8 @@ export function GameProvider({ api, children }: GameProviderProps) {
       dismissLevelUp,
       requestEvent,
       dismissEvent,
+      openPanel,
+      closePanel,
     }),
     [
       state,
@@ -279,6 +302,8 @@ export function GameProvider({ api, children }: GameProviderProps) {
       dismissLevelUp,
       requestEvent,
       dismissEvent,
+      openPanel,
+      closePanel,
     ],
   );
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -21,9 +21,8 @@ describe('CharacterCreation (§7.1 ui)', () => {
     await screen.findByText(ru.create.heading);
 
     await userEvent.type(screen.getByLabelText(ru.create.nameLabel), 'Артур');
-    await userEvent.selectOptions(
-      screen.getByLabelText(ru.create.classLabel),
-      'model-mage',
+    await userEvent.click(
+      screen.getByRole('radio', { name: ru.classes['model-mage']! }),
     );
     await userEvent.click(
       screen.getByRole('button', { name: ru.create.submit }),

@@ -32,8 +32,14 @@ function sampleMap(level: number): MapView {
             id: 'supervised-basics',
             title: 'Обучение с учителем',
             status: 'available',
+            prerequisites: [],
           },
-          { id: 'model-evaluation', title: 'Оценка моделей', status: 'locked' },
+          {
+            id: 'model-evaluation',
+            title: 'Оценка моделей',
+            status: 'locked',
+            prerequisites: ['supervised-basics'],
+          },
         ],
       },
       {
@@ -42,7 +48,12 @@ function sampleMap(level: number): MapView {
         unlock_level: 2,
         status: level >= 2 ? 'open' : 'locked',
         topics: [
-          { id: 'transformers', title: 'Трансформеры', status: 'locked' },
+          {
+            id: 'transformers',
+            title: 'Трансформеры',
+            status: 'locked',
+            prerequisites: ['model-evaluation'],
+          },
         ],
       },
     ],
@@ -82,11 +93,26 @@ export class FakeApiClient implements ApiClient {
       status: 'available',
       quests: [
         {
+          id: `${topicId}-theory`,
+          title: 'Свиток теории',
+          kind: 'theory',
+          xp: 50,
+          body: '## Урок\nОбучение с учителем учится по размеченным примерам.',
+          quiz: [],
+        },
+        {
           id: `${topicId}-practice`,
           title: 'Испытание',
           kind: 'practice',
           xp: 150,
-          quiz: [{ prompt: 'Вопрос?', options: ['Да', 'Нет'] }],
+          body: '',
+          quiz: [
+            {
+              prompt: 'Вопрос?',
+              options: ['Да', 'Нет'],
+              explanation: 'Потому что «Да» — верный ответ.',
+            },
+          ],
         },
       ],
     };

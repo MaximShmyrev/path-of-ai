@@ -23,14 +23,8 @@ export function CharacterCreation() {
     void createHero(trimmed, classId);
   };
 
-  const art = resolveAsset(classId);
-
   return (
     <WindowFrame title={ru.create.heading}>
-      <HeroPortrait
-        classId={classId}
-        {...(art !== undefined ? { src: art } : {})}
-      />
       <form onSubmit={onSubmit}>
         <label>
           {ru.create.nameLabel}
@@ -42,19 +36,38 @@ export function CharacterCreation() {
         </label>
         {touched && nameInvalid && <p role="alert">{ru.create.nameRequired}</p>}
 
-        <label>
-          {ru.create.classLabel}
-          <select
-            value={classId}
-            onChange={(event) => setClassId(event.target.value)}
+        <fieldset className="class-picker">
+          <legend>{ru.create.classLabel}</legend>
+          <div
+            className="class-cards"
+            role="radiogroup"
+            aria-label={ru.create.classLabel}
           >
-            {CLASS_IDS.map((id) => (
-              <option key={id} value={id}>
-                {ru.classes[id]}
-              </option>
-            ))}
-          </select>
-        </label>
+            {CLASS_IDS.map((id) => {
+              const art = resolveAsset(id);
+              const selected = id === classId;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className="class-card"
+                  role="radio"
+                  aria-label={ru.classes[id]}
+                  aria-checked={selected}
+                  data-selected={selected}
+                  onClick={() => setClassId(id)}
+                >
+                  <HeroPortrait
+                    classId={id}
+                    size={120}
+                    {...(art !== undefined ? { src: art } : {})}
+                  />
+                  <span className="class-card__title">{ru.classes[id]}</span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
 
         <Button type="submit" disabled={state.busy}>
           {ru.create.submit}

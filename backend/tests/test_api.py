@@ -190,6 +190,18 @@ class TestTopic:
                 assert "answer" not in question
                 assert "prompt" in question and "options" in question
 
+    async def test_topic_carries_lesson_and_explanation(
+        self, client_store: tuple[httpx.AsyncClient, InMemoryStore]
+    ) -> None:
+        # SPEC §7.10 (рев.2): тема отдаёт урок (body) и разбор (explanation).
+        client, _ = client_store
+        await _create_hero(client)
+        body = (await client.get("/api/topics/supervised-basics")).json()
+        theory = next(q for q in body["quests"] if q["kind"] == "theory")
+        assert theory["body"].strip()  # непустой урок
+        practice = next(q for q in body["quests"] if q["kind"] == "practice")
+        assert all(q["explanation"].strip() for q in practice["quiz"])
+
 
 async def _complete(
     client: httpx.AsyncClient, quest_id: str, answers: list[int] | None = None

@@ -1,0 +1,112 @@
+/* Полноэкранный каркас сцены (fullscreen game shell). Только var(--...). */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden; /* игра занимает весь экран, без скролла страницы */
+}
+
+#root {
+  display: flex;
+}
+
+/* Корневой каркас приложения */
+.app-shell {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: 1fr var(--hud-height);
+  overflow: hidden;
+  background-color: var(--color-bg);
+  background-image: var(--tex-map-bg);
+  background-size: cover;
+  background-position: center;
+}
+
+/* Виньетка и туман поверх фона, под контентом */
+.app-shell__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--vignette);
+  z-index: 1;
+  animation: torch-flicker 6s ease-in-out infinite;
+}
+
+/* Прокручиваемая область контента (сцены) */
+.app-shell__content {
+  position: relative;
+  z-index: 2;
+  overflow: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-frame) transparent;
+}
+
+.app-shell__content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.app-shell__content::-webkit-scrollbar-thumb {
+  background: var(--color-frame);
+  border-radius: var(--radius);
+}
+
+/* Внутренняя ширина сцены */
+.app-shell__stage {
+  width: 100%;
+  max-width: 1100px;
+}
+
+/* Кнопка полноэкранного режима */
+.fullscreen-toggle {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gold);
+  background: var(--color-surface-3);
+  border: var(--frame-width) solid var(--color-frame);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.fullscreen-toggle:hover {
+  color: var(--color-gold-bright);
+  border-color: var(--color-gold);
+  box-shadow: var(--glow-gold);
+}
+
+@keyframes torch-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.94;
+  }
+  55% {
+    opacity: 0.98;
+  }
+  70% {
+    opacity: 0.9;
+  }
+}

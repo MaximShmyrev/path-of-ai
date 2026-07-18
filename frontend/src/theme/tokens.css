@@ -1,45 +1,138 @@
 /* Дизайн-токены «Путь ИИ» — единственное место, где допустимы hex-цвета.
-   Тёмное фэнтези в духе олдскульных RPG (Diablo / Dragon Age). Все компоненты
-   ссылаются на эти переменные через var(--...), хардкод цвета вне этого файла
-   запрещён (проверяется тестом). */
+   Тёмное готическое фэнтези в духе Diablo II / D2R: чёрный камень, кованая
+   бронза, кроваво-красный, состаренный пергамент. Все компоненты ссылаются на
+   эти переменные через var(--...); хардкод hex-цвета вне этого файла запрещён
+   (проверяется guards.test.ts). */
 
 :root {
-  /* Палитра */
-  --color-bg: #14100c; /* почти чёрный коричневый — фон мира */
-  --color-surface: #211a13; /* панели */
-  --color-surface-2: #2c2218;
-  --color-parchment: #e8dcc0; /* состаренный пергамент */
-  --color-ink: #2a2018; /* текст по пергаменту */
-  --color-text: #d8c9a8; /* основной текст по тёмному */
-  --color-text-dim: #9a8a6a;
-  --color-gold: #c8a24a; /* акцент, опыт, награды */
-  --color-gold-bright: #e6c574;
+  /* ── Палитра: камень и тьма ───────────────────────────────────────────── */
+  --color-bg: #0a0705; /* почти чёрный — фон мира */
+  --color-bg-2: #140f0a; /* второй слой фона */
+  --color-surface: #1b150f; /* каменные панели */
+  --color-surface-2: #271e15; /* приподнятая поверхность */
+  --color-surface-3: #100c08; /* провалы, тени внутри панелей */
+
+  /* ── Пергамент ────────────────────────────────────────────────────────── */
+  --color-parchment: #e3d2a6; /* состаренный пергамент */
+  --color-parchment-dark: #c2ac79; /* затенённый край пергамента */
+  --color-ink: #2a1c0e; /* текст по пергаменту */
+
+  /* ── Текст по тёмному ─────────────────────────────────────────────────── */
+  --color-text: #d2bf94;
+  --color-text-dim: #8d7c5a;
+
+  /* ── Золото и бронза (акценты, рамки, опыт) ───────────────────────────── */
+  --color-gold: #c8a24a;
+  --color-gold-bright: #f0d480;
+  --color-gold-deep: #8a6d2c;
   --color-frame: #6b4f2a; /* бронзовые рамки */
-  --color-frame-light: #8c6a38;
-  --color-blood: #7a2222; /* опасность / босс */
-  --color-available: #4a7a44; /* доступно */
-  --color-locked: #4a423a; /* заблокировано */
-  --color-completed: #b89030; /* пройдено */
+  --color-frame-light: #a87d3c;
+  --color-frame-dark: #3a2912;
 
-  /* Типографика */
-  --font-heading: 'Georgia', 'Times New Roman', serif;
-  --font-body: 'Georgia', 'Iowan Old Style', serif;
+  /* ── Кровь и опасность ────────────────────────────────────────────────── */
+  --color-blood: #7c1414;
+  --color-blood-bright: #c8341f;
 
-  /* Отступы (шкала) */
+  /* ── Статусы карты ────────────────────────────────────────────────────── */
+  --color-available: #5a8a3c; /* доступно */
+  --color-available-glow: #8fce5a;
+  --color-locked: #463d31; /* заблокировано */
+  --color-completed: #c8a24a; /* пройдено */
+
+  /* ── Орбы HUD (стекло) ────────────────────────────────────────────────── */
+  --orb-health: #5a0c0c;
+  --orb-health-bright: #d8341e;
+  --orb-mana: #122a55;
+  --orb-mana-bright: #3f86e0;
+  --orb-rim: #2a1f12;
+
+  /* ── Типографика ──────────────────────────────────────────────────────── */
+  --font-heading: 'Forum', 'Trajan Pro', 'Georgia', serif;
+  --font-subheading: 'Forum', 'Trajan Pro', 'Georgia', serif;
+  --font-body: 'EB Garamond', 'Iowan Old Style', 'Georgia', serif;
+
+  /* ── Отступы (шкала) ──────────────────────────────────────────────────── */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 16px;
   --space-4: 24px;
   --space-5: 40px;
+  --space-6: 64px;
 
-  /* Прочее */
+  /* ── Геометрия рамок и HUD ────────────────────────────────────────────── */
   --radius: 4px;
   --frame-width: 3px;
-  --color-scrim: rgba(0, 0, 0, 0.7); /* затемнение под оверлеями */
-  --shadow-deep: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --frame-slice: 96; /* для border-image (ui-frame) */
+  --frame-outset: 22px; /* ширина орнаментальной рамки */
+  --hud-height: 116px;
+  --orb-size: 104px;
+
+  /* ── Свечение и тени ──────────────────────────────────────────────────── */
+  --glow-gold: 0 0 12px rgba(240, 212, 128, 0.55);
+  --glow-gold-soft: 0 0 24px rgba(200, 162, 74, 0.35);
+  --glow-blood: 0 0 18px rgba(200, 52, 31, 0.5);
+  --shadow-deep: 0 6px 28px rgba(0, 0, 0, 0.7);
+  --shadow-inset: inset 0 2px 10px rgba(0, 0, 0, 0.7);
+  --bevel-light: rgba(240, 212, 128, 0.25);
+  --bevel-dark: rgba(0, 0, 0, 0.65);
+
+  /* ── Атмосфера ────────────────────────────────────────────────────────── */
+  --color-scrim: rgba(0, 0, 0, 0.72); /* затемнение под оверлеями */
+  --ember: rgba(230, 150, 60, 0.85); /* угольки */
+  --fog: rgba(20, 14, 9, 0.55);
   --vignette: radial-gradient(
     ellipse at center,
-    transparent 55%,
-    rgba(0, 0, 0, 0.55) 100%
+    transparent 42%,
+    rgba(0, 0, 0, 0.45) 78%,
+    rgba(0, 0, 0, 0.82) 100%
   );
+
+  /* ── Текстуры (значения проставляет textures.ts из манифеста Flux;
+        здесь — фолбэк-градиенты, чтобы UI жил и без сгенерированных артов) ── */
+  --tex-parchment: linear-gradient(
+    160deg,
+    var(--color-parchment) 0%,
+    var(--color-parchment-dark) 100%
+  );
+  /* Тёмная каменная панель (Diablo II) — основной фон панелей, не пергамент. */
+  --tex-panel: linear-gradient(
+    180deg,
+    var(--color-surface-2) 0%,
+    var(--color-surface) 58%,
+    var(--color-surface-3) 100%
+  );
+  --tex-stone: linear-gradient(
+    180deg,
+    var(--color-surface-2) 0%,
+    var(--color-surface) 55%,
+    var(--color-surface-3) 100%
+  );
+  --tex-button: linear-gradient(
+    180deg,
+    var(--color-surface-2) 0%,
+    var(--color-surface) 100%
+  );
+  --tex-map-bg: radial-gradient(
+    ellipse at 50% 30%,
+    var(--color-bg-2) 0%,
+    var(--color-bg) 70%
+  );
+  /* Фон карты-атласа (Средиземье). Фолбэк — состаренный пергамент-карта. */
+  --tex-worldmap:
+    radial-gradient(
+      ellipse at 30% 25%,
+      rgba(120, 92, 48, 0.18),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 75% 70%,
+      rgba(90, 60, 30, 0.16),
+      transparent 55%
+    ),
+    linear-gradient(
+      160deg,
+      var(--color-parchment-dark) 0%,
+      var(--color-surface-2) 70%,
+      var(--color-surface) 100%
+    );
 }

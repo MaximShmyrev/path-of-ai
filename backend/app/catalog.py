@@ -40,6 +40,7 @@ class _RawQuiz(BaseModel):
     prompt: str
     options: list[str]
     answer: int
+    explanation: str = ""
 
 
 class _RawQuest(BaseModel):
@@ -47,6 +48,7 @@ class _RawQuest(BaseModel):
     title: str
     kind: QuestKind
     xp: int
+    body: str = ""
     quiz: list[_RawQuiz] = []
 
 
@@ -194,11 +196,13 @@ def load_catalog(source: ContentSource) -> Catalog:
             xp=quest.xp,
             topic_id=topic.id,
             region_id=region.id,
+            body=quest.body,
             quiz=tuple(
                 QuizQuestion(
                     prompt=item.prompt,
                     options=tuple(item.options),
                     answer=item.answer,
+                    explanation=item.explanation,
                 )
                 for item in quest.quiz
             ),
@@ -240,6 +244,8 @@ def _validate_semantics(catalog: Catalog) -> None:
     _check_acyclic(catalog)
     _check_each_topic_has_practice(catalog)
     _check_practice_quests_have_quiz(catalog)
+    _check_theory_quests_have_body(catalog)
+    _check_quiz_questions_have_explanation(catalog)
     _check_region_levels_non_decreasing(catalog)
     _check_quiz_answers_in_range(catalog)
 
@@ -303,6 +309,25 @@ def _check_practice_quests_have_quiz(catalog: Catalog) -> None:
             raise ContentValidationError(
                 f"Практический квест {quest.id!r} должен содержать квиз"
             )
+
+
+def _check_theory_quests_have_body(catalog: Catalog) -> None:
+    """SPEC §7.9/§8 (рев.2): тема обязана учить — у theory-квеста непустой урок."""
+    for quest in catalog.quests:
+        if quest.kind == "theory" and not quest.body.strip():
+            raise ContentValidationError(
+                f"Теоретический квест {quest.id!r} должен содержать урок (body)"
+            )
+
+
+def _check_quiz_questions_have_explanation(catalog: Catalog) -> None:
+    """SPEC §7.9/§8 (рев.2): каждый вопрос квиза обязан давать разбор."""
+    for quest in catalog.quests:
+        for index, question in enumerate(quest.quiz):
+            if not question.explanation.strip():
+                raise ContentValidationError(
+                    f"Квест {quest.id!r}, вопрос {index}: нет разбора (explanation)"
+                )
 
 
 def _check_region_levels_non_decreasing(catalog: Catalog) -> None:
