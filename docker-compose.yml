@@ -1,56 +1,8 @@
 services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-pathofai}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pathofai}
-      POSTGRES_DB: ${POSTGRES_DB:-pathofai}
-    # Порт наружу намеренно не публикуем: БД доступна сервисам по внутренней сети
-    # compose (host: db, port 5432). Для отладки с хоста раскомментируй и при
-    # необходимости смени левый порт, если 5432 занят:
-    # ports:
-    #   - "5433:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pathofai}"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-  backend:
-    build: ./backend
-    environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pathofai}:${POSTGRES_PASSWORD:-pathofai}@db:5432/${POSTGRES_DB:-pathofai}
-      # Опциональные ключи (см. .env.example). Пусто → работают фоллбэки.
-      GLM_API_KEY: ${GLM_API_KEY:-}
-      GLM_BASE_URL: ${GLM_BASE_URL:-}
-      REPLICATE_API_TOKEN: ${REPLICATE_API_TOKEN:-}
+  ai-agents-rpg:
+    build: .
+    container_name: ai-agents-rpg
+    restart: unless-stopped
     ports:
-      - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-    healthcheck:
-      # Liveness: бьём в /health (не требует БД, см. PLAN E0)
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)",
-        ]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
+      - "8789:80"
 
-  frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
-
-volumes:
-  postgres-data:
