@@ -17,6 +17,7 @@ export type MapTopic = {
   id: string;
   title: string;
   status: TopicStatus;
+  prerequisites: string[];
 };
 
 export type MapRegion = {
@@ -35,6 +36,7 @@ export type MapView = {
 export type QuizQuestionView = {
   prompt: string;
   options: string[];
+  explanation: string; // разбор: показывается после ответа (SPEC §7.10)
 };
 
 export type QuestView = {
@@ -42,6 +44,7 @@ export type QuestView = {
   title: string;
   kind: QuestKind;
   xp: number;
+  body: string; // урок (markdown) для theory-квеста
   quiz: QuizQuestionView[];
 };
 

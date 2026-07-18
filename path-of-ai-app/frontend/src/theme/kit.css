@@ -1,11 +1,13 @@
-/* Базовые стили UI-кита. Только var(--...) — без хардкода hex. */
+/* UI-кит «Путь ИИ» — Diablo II / D2R. Только var(--...) и rgba(); хардкод hex
+   запрещён (guards.test.ts). Растровые текстуры подключаются через --tex-*. */
 
 body {
   margin: 0;
   background-color: var(--color-bg);
-  background-image: var(--vignette);
   color: var(--color-text);
   font-family: var(--font-body);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
@@ -13,97 +15,379 @@ h2,
 h3 {
   font-family: var(--font-heading);
   color: var(--color-gold-bright);
+  letter-spacing: 0.03em;
 }
 
-/* XP-бар */
+/* ── Титул игры ──────────────────────────────────────────────────────────── */
+.app-title {
+  font-family: var(--font-heading);
+  font-size: clamp(22px, 4vw, 38px);
+  letter-spacing: 0.14em;
+  text-align: center;
+  color: var(--color-gold-bright);
+  text-shadow:
+    0 0 18px rgba(240, 212, 128, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.9);
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+/* ── Баннеры (загрузка/ошибка) ──────────────────────────────────────────── */
+.banner {
+  font-family: var(--font-subheading);
+  color: var(--color-text);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.banner--alert {
+  color: var(--color-blood-bright);
+  border: 2px solid var(--color-blood);
+  background: rgba(124, 20, 20, 0.2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  box-shadow: var(--glow-blood);
+}
+
+/* ── Кнопка: каменно-бронзовая табличка ─────────────────────────────────── */
+.button {
+  font-family: var(--font-subheading);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--color-gold-bright);
+  background-image: var(--tex-button);
+  background-size: cover;
+  background-position: center;
+  border: 2px solid transparent;
+  border-image: linear-gradient(
+      180deg,
+      var(--color-frame-light),
+      var(--color-frame-dark)
+    )
+    1;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  margin: var(--space-1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  box-shadow:
+    inset 0 1px 0 var(--bevel-light),
+    inset 0 -4px 10px var(--bevel-dark),
+    0 2px 5px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+
+.button:hover:not(:disabled) {
+  color: var(--color-gold-bright);
+  box-shadow:
+    inset 0 1px 0 var(--bevel-light),
+    0 0 16px rgba(240, 212, 128, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.6);
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  color: var(--color-text-dim);
+  filter: grayscale(0.6) brightness(0.7);
+  box-shadow: var(--shadow-inset);
+  cursor: not-allowed;
+}
+
+/* ── Тёмная каменная панель в бронзовой раме (Diablo II) ─────────────────── */
+.window-frame {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  background-image: var(--tex-panel);
+  background-size: cover;
+  background-position: center;
+  border: 2px solid var(--color-frame);
+  border-radius: var(--radius);
+  box-shadow:
+    var(--shadow-deep),
+    inset 0 0 0 1px var(--color-frame-dark),
+    inset 0 0 36px rgba(0, 0, 0, 0.6);
+  padding: var(--space-4);
+}
+
+.window-frame__title {
+  font-family: var(--font-heading);
+  color: var(--color-gold-bright);
+  text-align: center;
+  letter-spacing: 0.06em;
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-frame);
+  text-shadow:
+    var(--glow-gold-soft),
+    0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Текст и формы по тёмной панели — светлые */
+.window-frame h2,
+.window-frame h3 {
+  font-family: var(--font-subheading);
+  color: var(--color-gold-bright);
+}
+
+.window-frame legend {
+  font-family: var(--font-subheading);
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+}
+
+.window-frame label {
+  display: block;
+  margin: var(--space-3) 0;
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+.window-frame input:not([type='radio']):not([type='checkbox']),
+.window-frame select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: var(--space-1);
+  padding: var(--space-2);
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--color-frame);
+  border-radius: var(--radius);
+}
+
+.window-frame input::placeholder {
+  color: var(--color-text-dim);
+}
+
+.window-frame input:focus,
+.window-frame select:focus {
+  outline: none;
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 2px rgba(200, 162, 74, 0.4);
+}
+
+.window-frame fieldset {
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-frame);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.window-frame fieldset label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-1) 0;
+}
+
+.window-frame [role='alert'] {
+  color: var(--color-blood-bright);
+  font-weight: 600;
+}
+
+/* ── Создание героя: карточки классов ───────────────────────────────────── */
+.class-picker {
+  border: none;
+  padding: 0;
+  margin: var(--space-3) 0;
+}
+
+.class-cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.class-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: rgba(0, 0, 0, 0.14);
+  border: 3px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+.class-card:hover {
+  border-color: var(--color-frame);
+  transform: translateY(-2px);
+}
+
+.class-card[data-selected='true'] {
+  border-color: var(--color-gold);
+  background: rgba(200, 162, 74, 0.16);
+  box-shadow: var(--glow-gold);
+}
+
+.class-card__title {
+  font-family: var(--font-subheading);
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  color: var(--color-gold-bright);
+}
+
+/* ── Урок-свиток (markdown): плотный пергамент на тёмной панели ──────────── */
+.lesson {
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  line-height: 1.55;
+  margin: var(--space-2) 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-parchment);
+  background-image: var(--tex-parchment);
+  background-size: cover;
+  border: 2px solid var(--color-frame);
+  border-radius: var(--radius);
+  box-shadow:
+    var(--shadow-deep),
+    inset 0 0 24px rgba(120, 90, 40, 0.25);
+}
+
+.lesson h2,
+.lesson h3 {
+  font-family: var(--font-subheading);
+  color: var(--color-blood);
+  margin: 0 0 var(--space-2);
+}
+
+.lesson p {
+  margin: 0 0 var(--space-2);
+}
+
+.lesson ul,
+.lesson ol {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
+}
+
+.lesson li {
+  margin: var(--space-1) 0;
+}
+
+.lesson code {
+  font-family: 'Courier New', monospace;
+  background: rgba(0, 0, 0, 0.12);
+  padding: 0 var(--space-1);
+  border-radius: 3px;
+}
+
+.quest__explanation {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  background: rgba(200, 162, 74, 0.12);
+  border-left: 4px solid var(--color-gold);
+  border-radius: var(--radius);
+  font-style: italic;
+}
+
+/* ── XP-бар (используется как «свиток прогресса») ───────────────────────── */
 .xp-bar {
   position: relative;
   height: 16px;
-  border: var(--frame-width) solid var(--color-frame);
+  border: 2px solid var(--color-frame);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--color-surface-3);
+  box-shadow: var(--shadow-inset);
   overflow: hidden;
 }
 
 .xp-bar__fill {
   height: 100%;
-  background: var(--color-gold);
-  transition: width 0.4s ease;
+  background: linear-gradient(
+    180deg,
+    var(--color-gold-bright),
+    var(--color-gold)
+  );
+  box-shadow: 0 0 10px rgba(240, 212, 128, 0.6);
+  transition: width 0.5s ease;
 }
 
-/* Кнопка */
-.button {
-  font-family: var(--font-heading);
-  color: var(--color-parchment);
-  background: var(--color-surface-2);
-  border: var(--frame-width) solid var(--color-frame);
-  border-radius: var(--radius);
-  padding: var(--space-2) var(--space-4);
-  cursor: pointer;
+/* ── Карта мира: каменные плакаты регионов ──────────────────────────────── */
+.world-scene {
+  width: 100%;
 }
 
-.button:hover {
-  border-color: var(--color-gold);
-  color: var(--color-gold-bright);
-}
-
-.button:disabled {
-  color: var(--color-text-dim);
-  border-color: var(--color-locked);
-  cursor: not-allowed;
-}
-
-/* Декоративная рамка окна */
-.window-frame {
-  border: var(--frame-width) solid var(--color-frame);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-deep);
-  padding: var(--space-3);
-}
-
-.window-frame__title {
-  margin: 0 0 var(--space-2);
-}
-
-/* Оверлей повышения уровня */
-.levelup-overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-scrim);
-}
-
-.levelup-overlay__card {
+.world-scene__header {
   text-align: center;
-  padding: var(--space-5);
-  border: var(--frame-width) solid var(--color-gold);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-deep);
+  margin-bottom: var(--space-2);
 }
 
-/* Карта мира */
+.world-scene__header h2 {
+  font-size: clamp(20px, 3vw, 30px);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
 .world-map {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--space-4);
-  padding: var(--space-4);
+  padding: var(--space-3) 0;
+  width: 100%;
 }
 
 .world-map__region {
-  flex: 1 1 240px;
-  border: var(--frame-width) solid var(--color-frame);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  position: relative;
+  min-height: 210px;
   padding: var(--space-3);
+  border: 4px solid transparent;
+  border-image: linear-gradient(
+      160deg,
+      var(--color-frame-light),
+      var(--color-frame-dark)
+    )
+    1;
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+  background-size: cover;
+  background-position: center;
+  box-shadow:
+    var(--shadow-deep),
+    inset 0 0 44px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.world-map__region:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    var(--shadow-deep),
+    var(--glow-gold-soft),
+    inset 0 0 44px rgba(0, 0, 0, 0.5);
 }
 
 .world-map__region[data-status='locked'] {
-  opacity: 0.55;
-  border-color: var(--color-locked);
+  filter: grayscale(0.7) brightness(0.55);
+}
+
+.world-map__region-title {
+  font-family: var(--font-heading);
+  margin: 0 0 var(--space-3);
+  color: var(--color-gold-bright);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 }
 
 .world-map__nodes {
@@ -112,7 +396,7 @@ h3 {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .world-map__node-button {
@@ -120,12 +404,25 @@ h3 {
   align-items: center;
   gap: var(--space-2);
   width: 100%;
-  background: transparent;
-  border: none;
+  padding: var(--space-2);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   color: var(--color-text);
   font-family: var(--font-body);
+  font-size: 15px;
   cursor: pointer;
   text-align: left;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.world-map__node-button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.62);
+  color: var(--color-gold-bright);
+  border-color: var(--color-frame);
 }
 
 .world-map__node-button:disabled {
@@ -133,13 +430,818 @@ h3 {
   cursor: not-allowed;
 }
 
-/* Слоты под рисованные арты (заполняются в E9) */
-.art-placeholder {
+/* ── Карта мира: атлас в стиле Средиземья ───────────────────────────────── */
+.atlas {
+  position: relative;
+  width: 100%;
+  min-height: 580px;
+  aspect-ratio: 16 / 10;
+  border: 3px solid var(--color-frame);
+  border-radius: var(--radius);
+  box-shadow:
+    var(--shadow-deep),
+    inset 0 0 0 1px var(--color-frame-dark),
+    inset 0 0 90px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.atlas__paper {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-surface);
+  background-image: var(--tex-worldmap);
+  background-size: cover;
+  background-position: center;
+}
+
+.atlas__road {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.atlas__road-line {
+  fill: none;
+  stroke: var(--color-gold-deep);
+  stroke-width: 0.5;
+  stroke-dasharray: 1.4 1.6;
+  opacity: 0.7;
+}
+
+.atlas__land {
+  position: absolute;
+  width: 230px;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-surface);
+  background-size: cover;
+  background-position: center;
+  border: 2px solid var(--color-frame);
+  border-radius: var(--radius);
+  box-shadow:
+    var(--shadow-deep),
+    inset 0 0 30px rgba(0, 0, 0, 0.6);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.atlas__land:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    var(--shadow-deep),
+    var(--glow-gold-soft),
+    inset 0 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.atlas__land[data-status='locked'] {
+  filter: grayscale(0.7) brightness(0.6);
+}
+
+.atlas__land-name {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: var(--color-gold-bright);
+  text-shadow:
+    var(--glow-gold-soft),
+    0 2px 6px rgba(0, 0, 0, 0.95);
+}
+
+.atlas__land-sub {
+  margin: 0 0 var(--space-2);
+  font-size: 12px;
+  color: var(--color-text-dim);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.atlas__nodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.atlas__node-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.atlas__node-button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--color-gold-bright);
+  border-color: var(--color-frame);
+}
+
+.atlas__node-button:disabled {
+  color: var(--color-text-dim);
+  cursor: not-allowed;
+}
+
+/* ── Оверлеи (level-up, событие) ────────────────────────────────────────── */
+.levelup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--space-4);
+  background: var(--color-scrim);
+  backdrop-filter: blur(2px);
+  animation: fade-in 0.3s ease;
+}
+
+.levelup-overlay__card {
+  position: relative;
+  max-width: 520px;
+  text-align: center;
+  padding: var(--space-5) var(--space-6);
+  color: var(--color-ink);
+  background-image: var(--tex-parchment);
+  background-size: cover;
+  background-position: center;
+  border: 5px solid transparent;
+  border-image: linear-gradient(
+      160deg,
+      var(--color-gold-bright),
+      var(--color-frame-dark)
+    )
+    1;
+  box-shadow:
+    var(--shadow-deep),
+    0 0 48px rgba(240, 212, 128, 0.4);
+  animation: levelup-burst 0.55s ease;
+}
+
+.levelup-overlay__card h2 {
+  color: var(--color-blood);
+  font-family: var(--font-heading);
+}
+
+/* ── Слоты артов ────────────────────────────────────────────────────────── */
+.art-placeholder {
+  display: block;
+  margin: 0 auto var(--space-3);
   background: var(--color-surface-2);
-  border: var(--frame-width) solid var(--color-frame);
+  border: 3px solid transparent;
+  border-image: linear-gradient(
+      160deg,
+      var(--color-frame-light),
+      var(--color-frame-dark)
+    )
+    1;
   border-radius: var(--radius);
+  box-shadow:
+    var(--shadow-deep),
+    inset 0 0 18px rgba(0, 0, 0, 0.5);
   color: var(--color-text-dim);
+  object-fit: cover;
+}
+
+/* ── HUD: нижняя каменная панель ────────────────────────────────────────── */
+.hud {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--hud-height);
+  padding: 0 var(--space-5);
+  background-color: var(--color-surface);
+  background-image: var(--tex-stone);
+  background-size: cover;
+  background-position: center;
+  border-top: 3px solid var(--color-frame);
+  box-shadow:
+    0 -8px 26px rgba(0, 0, 0, 0.7),
+    inset 0 3px 0 var(--color-frame-dark);
+}
+
+.hud .orb {
+  transform: translateY(-12px);
+}
+
+.hud__center {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.hud__portrait {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border: 2px solid var(--color-frame);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px var(--color-frame-dark),
+    var(--shadow-deep);
+}
+
+.hud__portrait .art-placeholder {
+  margin: 0;
+  border: none;
+  box-shadow: none;
+  width: 100%;
+  height: 100%;
+}
+
+.hud__belt {
+  min-height: 62%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  background: rgba(0, 0, 0, 0.38);
+  border: 2px solid transparent;
+  border-image: linear-gradient(
+      180deg,
+      var(--color-frame-light),
+      var(--color-frame-dark)
+    )
+    1;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-inset);
+}
+
+.hud__nav {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.hud__nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: var(--color-gold);
+  background: var(--color-surface-3);
+  border: 2px solid var(--color-frame);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+}
+
+.hud__nav-button:hover {
+  color: var(--color-gold-bright);
+  border-color: var(--color-gold);
+  box-shadow: var(--glow-gold);
+  transform: translateY(-1px);
+}
+
+.hud__hero-name {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--color-gold-bright);
+  letter-spacing: 0.05em;
+  text-shadow: var(--glow-gold-soft);
+}
+
+.hud__hero-meta {
+  font-family: var(--font-subheading);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+}
+
+/* ── Орбы (стеклянные сферы) ─────────────────────────────────────────────── */
+.orb {
+  position: relative;
+  width: var(--orb-size);
+  height: var(--orb-size);
+  flex: 0 0 auto;
+}
+
+.orb__glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 38% 30%,
+      rgba(255, 255, 255, 0.14),
+      rgba(0, 0, 0, 0.55) 72%
+    ),
+    var(--color-surface-3);
+  box-shadow:
+    var(--shadow-inset),
+    inset 0 0 20px rgba(0, 0, 0, 0.85);
+}
+
+.orb__fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transition: height 0.6s ease;
+  animation: orb-shimmer 3.5s ease-in-out infinite;
+}
+
+.orb[data-kind='health'] .orb__fill {
+  background: linear-gradient(
+    180deg,
+    var(--orb-health-bright),
+    var(--orb-health)
+  );
+  box-shadow: 0 0 18px var(--orb-health-bright);
+}
+
+.orb[data-kind='mana'] .orb__fill {
+  background: linear-gradient(180deg, var(--orb-mana-bright), var(--orb-mana));
+  box-shadow: 0 0 18px var(--orb-mana-bright);
+}
+
+.orb__shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 35% 24%,
+    rgba(255, 255, 255, 0.55),
+    transparent 40%
+  );
+}
+
+.orb__rim {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 5px solid var(--color-frame);
+  pointer-events: none;
+  box-shadow:
+    0 0 0 2px var(--color-frame-dark),
+    0 4px 12px rgba(0, 0, 0, 0.75),
+    inset 0 0 10px rgba(0, 0, 0, 0.6);
+}
+
+.orb__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  text-align: center;
+  font-family: var(--font-subheading);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--color-gold-bright);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+}
+
+/* ── Атмосфера: угольки ─────────────────────────────────────────────────── */
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.atmosphere__ember {
+  position: absolute;
+  bottom: -12px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ember);
+  box-shadow: 0 0 6px var(--ember);
+  opacity: 0;
+  animation-name: ember-rise;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-out;
+}
+
+/* ── Анимации ───────────────────────────────────────────────────────────── */
+@keyframes ember-rise {
+  0% {
+    transform: translate(0, 0) scale(var(--ember-scale, 1));
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate(var(--ember-drift, 0), -100vh)
+      scale(var(--ember-scale, 1));
+    opacity: 0;
+  }
+}
+
+@keyframes orb-shimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.18);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes levelup-burst {
+  0% {
+    transform: scale(0.82);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ── Оверлей-панели персонажа (Diablo C/I) ──────────────────────────────── */
+.panel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.panel-overlay__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--color-scrim);
+  backdrop-filter: blur(2px);
+}
+
+.panel-frame {
+  position: relative;
+  z-index: 1;
+  width: min(940px, 94vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  background-image: var(--tex-panel);
+  border: 3px solid var(--color-frame);
+  border-radius: var(--radius);
+  box-shadow:
+    var(--shadow-deep),
+    inset 0 0 0 1px var(--color-frame-dark),
+    inset 0 0 60px rgba(0, 0, 0, 0.6);
+  animation: levelup-burst 0.35s ease;
+}
+
+.panel-frame__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-frame);
+}
+
+.panel-frame__head h2 {
+  margin: 0;
+  font-family: var(--font-heading);
+  color: var(--color-gold-bright);
+  letter-spacing: 0.06em;
+  text-shadow: var(--glow-gold-soft);
+}
+
+.panel-frame__close {
+  width: 36px;
+  height: 36px;
+  color: var(--color-gold);
+  background: var(--color-surface-3);
+  border: 2px solid var(--color-frame);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.panel-frame__close:hover {
+  color: var(--color-gold-bright);
+  border-color: var(--color-gold);
+  box-shadow: var(--glow-gold);
+}
+
+.panel-frame__body {
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+/* ── Лист персонажа ─────────────────────────────────────────────────────── */
+.sheet__header {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.sheet__portrait {
+  width: 132px;
+  height: 132px;
+  flex: 0 0 auto;
+  border: 3px solid var(--color-frame);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow:
+    var(--shadow-deep),
+    0 0 0 1px var(--color-frame-dark),
+    var(--glow-gold-soft);
+}
+
+.sheet__portrait .art-placeholder {
+  margin: 0;
+  border: none;
+  box-shadow: none;
+  width: 100%;
+  height: 100%;
+}
+
+.sheet__id h2 {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-heading);
+  color: var(--color-gold-bright);
+}
+
+.sheet__class {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text);
+  font-family: var(--font-subheading);
+}
+
+.sheet__xp {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-dim);
+  font-size: 13px;
+}
+
+.sheet h3 {
+  color: var(--color-gold-bright);
+  border-bottom: 1px solid var(--color-frame);
+  padding-bottom: var(--space-1);
+  margin: var(--space-3) 0;
+}
+
+.sheet__radar {
+  display: flex;
+  gap: var(--space-5);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sheet__comp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sheet__comp {
+  display: grid;
+  grid-template-columns: 1fr 120px auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sheet__comp-title {
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.sheet__comp-num {
+  color: var(--color-text-dim);
+  font-size: 13px;
+}
+
+/* ── Радар компетенций (SVG) ────────────────────────────────────────────── */
+.radar__ring {
+  stroke: var(--color-frame-dark);
+  stroke-width: 1;
+}
+
+.radar__axis {
+  stroke: var(--color-frame);
+  stroke-width: 1;
+}
+
+.radar__value {
+  fill: rgba(200, 162, 74, 0.28);
+  stroke: var(--color-gold);
+  stroke-width: 2;
+}
+
+.radar__node {
+  fill: var(--color-gold-bright);
+}
+
+.radar__label {
+  fill: var(--color-text);
+  font-family: var(--font-subheading);
+  font-size: 12px;
+}
+
+/* ── Полоса (generic) ───────────────────────────────────────────────────── */
+.bar {
+  display: inline-block;
+  height: 12px;
+  border: 1px solid var(--color-frame);
+  background: var(--color-surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar__fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    var(--color-gold-bright),
+    var(--color-gold)
+  );
+}
+
+/* ── Инвентарь ──────────────────────────────────────────────────────────── */
+.inventory__empty {
+  color: var(--color-text-dim);
+  text-align: center;
+  font-style: italic;
+  margin-bottom: var(--space-3);
+}
+
+.inventory__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: var(--space-2);
+}
+
+.inv-slot {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid var(--color-frame-dark);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-inset);
+}
+
+.inv-slot--filled {
+  color: var(--color-gold);
+  border-color: var(--color-frame);
+  background: rgba(200, 162, 74, 0.08);
+}
+
+.inv-slot--filled:hover {
+  border-color: var(--color-gold);
+  box-shadow: var(--glow-gold-soft);
+}
+
+.inv-slot__label {
+  font-size: 10px;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--color-text-dim);
+  max-height: 2.4em;
+  overflow: hidden;
+}
+
+/* ── Дерево навыков ─────────────────────────────────────────────────────── */
+.skilltree {
+  position: relative;
+  margin: 0 auto;
+}
+
+.skilltree__col-title {
+  position: absolute;
+  top: 0;
+  text-align: center;
+  font-family: var(--font-heading);
+  color: var(--color-gold-bright);
+  letter-spacing: 0.06em;
+}
+
+.skilltree__edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.skilltree__edge {
+  stroke: var(--color-frame);
+  stroke-width: 2;
+}
+
+.skill-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface-2);
+  border: 2px solid var(--color-frame-dark);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.skill-node__icon {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--color-gold);
+}
+
+.skill-node__title {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.skill-node[data-status='completed'] {
+  border-color: var(--color-gold);
+  box-shadow: var(--glow-gold-soft);
+}
+
+.skill-node[data-status='completed'] .skill-node__icon {
+  color: var(--color-gold-bright);
+}
+
+.skill-node[data-status='available'] {
+  border-color: var(--color-available);
+}
+
+.skill-node[data-status='available'] .skill-node__icon {
+  color: var(--color-available-glow);
+}
+
+.skill-node[data-status='locked'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.skill-node:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--color-gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere,
+  .app-shell__vignette {
+    animation: none;
+  }
+  .orb__fill {
+    animation: none;
+  }
 }

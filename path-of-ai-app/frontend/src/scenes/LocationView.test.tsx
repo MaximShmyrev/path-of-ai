@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -44,10 +44,11 @@ describe('Игровой цикл в локации', () => {
     );
 
     // §7.4: оверлей повышения уровня (0→150 XP → уровень 2)
-    expect(
-      await screen.findByRole('dialog', { name: /Повышение уровня/ }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Уровень 2/)).toBeInTheDocument();
+    const dialog = await screen.findByRole('dialog', {
+      name: /Повышение уровня/,
+    });
+    // «Уровень 2» теперь есть и в HUD — проверяем именно внутри оверлея.
+    expect(within(dialog).getByText(/Уровень 2/)).toBeInTheDocument();
   });
 
   it('§7.3 ui: неверный ответ показывает ошибку, без перехода', async () => {

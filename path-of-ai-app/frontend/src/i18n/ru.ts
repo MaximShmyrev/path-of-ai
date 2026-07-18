@@ -21,6 +21,16 @@ export const ru = {
     heading: 'Карта мира',
     level: 'Уровень',
   },
+  hud: {
+    label: 'Панель героя',
+    xp: 'Опыт',
+    lore: 'Познание мира',
+    idle: 'Безымянный странник',
+    character: 'Персонаж',
+    inventory: 'Инвентарь',
+    skills: 'Навыки',
+    close: 'Закрыть',
+  },
   location: {
     back: 'Назад к карте',
     event: 'Вызвать событие',
@@ -38,6 +48,24 @@ export const ru = {
   event: {
     title: 'Событие',
     close: 'Закрыть',
+  },
+  character: {
+    title: 'Лист персонажа',
+    forces: 'Силы персонажа',
+    competencies: 'Компетенции',
+  },
+  inventoryPanel: {
+    title: 'Инвентарь',
+    empty: 'Инвентарь пуст. Проходите темы, чтобы добыть трофеи.',
+    trophy: 'Трофей за освоенную тему',
+  },
+  skillsPanel: {
+    title: 'Дерево навыков',
+    statuses: {
+      completed: 'Освоено',
+      available: 'Доступно',
+      locked: 'Закрыто',
+    } as Record<string, string>,
   },
 } as const;
 

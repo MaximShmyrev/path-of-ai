@@ -40,7 +40,7 @@ describe('WorldMap', () => {
       { id: 'ml-foundations', title: 'Долина', status: 'open', topics: [] },
     ];
     const { container } = render(<WorldMap regions={regions} />);
-    const section = container.querySelector('.world-map__region');
+    const section = container.querySelector('.atlas__land');
     expect((section as HTMLElement).style.backgroundImage).toContain(
       'ml-foundations.webp',
     );

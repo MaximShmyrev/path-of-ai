@@ -38,6 +38,7 @@ def _seed() -> dict[str, Any]:
                                 "title": "Свиток теории",
                                 "kind": "theory",
                                 "xp": 50,
+                                "body": "Урок: основы.",
                             },
                             {
                                 "id": "q-practice",
@@ -49,6 +50,7 @@ def _seed() -> dict[str, Any]:
                                         "prompt": "2+2?",
                                         "options": ["3", "4"],
                                         "answer": 1,
+                                        "explanation": "Потому что 2+2=4.",
                                     }
                                 ],
                             },
@@ -85,7 +87,14 @@ def _practice(quest_id: str) -> dict[str, Any]:
         "title": "Практика",
         "kind": "practice",
         "xp": 100,
-        "quiz": [{"prompt": "?", "options": ["a", "b"], "answer": 0}],
+        "quiz": [
+            {
+                "prompt": "?",
+                "options": ["a", "b"],
+                "answer": 0,
+                "explanation": "Разбор.",
+            }
+        ],
     }
 
 
@@ -96,6 +105,20 @@ class TestSemanticValidation:
         seed["regions"][0]["topics"][0]["quests"] = [
             {"id": "only-theory", "title": "T", "kind": "theory", "xp": 50},
         ]
+        with pytest.raises(ContentValidationError):
+            load_catalog(InMemorySource(seed))
+
+    def test_theory_without_body_rejected(self) -> None:
+        # SPEC §7.9/§8 (рев.2): у theory-квеста обязателен непустой урок (body).
+        seed = _seed()
+        seed["regions"][0]["topics"][0]["quests"][0]["body"] = "   "
+        with pytest.raises(ContentValidationError):
+            load_catalog(InMemorySource(seed))
+
+    def test_quiz_question_without_explanation_rejected(self) -> None:
+        # SPEC §7.9/§8 (рев.2): у каждого вопроса квиза обязателен разбор (explanation).
+        seed = _seed()
+        seed["regions"][0]["topics"][0]["quests"][1]["quiz"][0]["explanation"] = ""
         with pytest.raises(ContentValidationError):
             load_catalog(InMemorySource(seed))
 

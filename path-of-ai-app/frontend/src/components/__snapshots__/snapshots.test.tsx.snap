@@ -25,6 +25,85 @@ exports[`Снапшоты кита > HeroPortrait placeholder 1`] = `
 </svg>
 `;
 
+exports[`Снапшоты кита > Hud (idle, без героя) 1`] = `
+<footer
+  aria-label="Панель героя"
+  class="hud"
+>
+  <div
+    aria-label="Опыт"
+    aria-valuemax="1"
+    aria-valuemin="0"
+    aria-valuenow="0"
+    class="orb"
+    data-kind="health"
+    role="meter"
+  >
+    <div
+      class="orb__glass"
+    >
+      <div
+        class="orb__fill"
+        style="height: 0%;"
+      />
+      <div
+        class="orb__shine"
+      />
+    </div>
+    <div
+      class="orb__rim"
+    />
+    <span
+      class="orb__caption"
+    >
+      0 XP
+    </span>
+  </div>
+  <div
+    class="hud__center"
+  >
+    <div
+      class="hud__belt"
+    >
+      <span
+        class="hud__hero-meta"
+      >
+        Безымянный странник
+      </span>
+    </div>
+  </div>
+  <div
+    aria-label="Познание мира"
+    aria-valuemax="0"
+    aria-valuemin="0"
+    aria-valuenow="0"
+    class="orb"
+    data-kind="mana"
+    role="meter"
+  >
+    <div
+      class="orb__glass"
+    >
+      <div
+        class="orb__fill"
+        style="height: 0%;"
+      />
+      <div
+        class="orb__shine"
+      />
+    </div>
+    <div
+      class="orb__rim"
+    />
+    <span
+      class="orb__caption"
+    >
+      —
+    </span>
+  </div>
+</footer>
+`;
+
 exports[`Снапшоты кита > LevelUpOverlay 1`] = `
 <div
   aria-label="Повышение уровня"
@@ -120,6 +199,38 @@ exports[`Снапшоты кита > LocationMarker (все статусы) 1`] 
 </div>
 `;
 
+exports[`Снапшоты кита > Orb (health, частичный налив) 1`] = `
+<div
+  aria-label="Опыт"
+  aria-valuemax="100"
+  aria-valuemin="0"
+  aria-valuenow="30"
+  class="orb"
+  data-kind="health"
+  role="meter"
+>
+  <div
+    class="orb__glass"
+  >
+    <div
+      class="orb__fill"
+      style="height: 30%;"
+    />
+    <div
+      class="orb__shine"
+    />
+  </div>
+  <div
+    class="orb__rim"
+  />
+  <span
+    class="orb__caption"
+  >
+    30 XP
+  </span>
+</div>
+`;
+
 exports[`Снапшоты кита > QuestIcon (все виды) 1`] = `
 <div>
   <svg
@@ -172,25 +283,30 @@ exports[`Снапшоты кита > QuestIcon (все виды) 1`] = `
 
 exports[`Снапшоты кита > WorldMap 1`] = `
 <div
-  class="world-map"
+  class="atlas"
 >
+  <div
+    aria-hidden="true"
+    class="atlas__paper"
+  />
   <section
-    class="world-map__region"
+    class="atlas__land"
     data-status="open"
+    style="left: 6%; top: 28%;"
   >
     <h3
-      class="world-map__region-title"
+      class="atlas__land-name"
     >
       Долина основ ML
     </h3>
     <ul
-      class="world-map__nodes"
+      class="atlas__nodes"
     >
       <li
-        class="world-map__node"
+        class="atlas__node"
       >
         <button
-          class="world-map__node-button"
+          class="atlas__node-button"
           disabled=""
           type="button"
         >
@@ -214,7 +330,7 @@ exports[`Снапшоты кита > WorldMap 1`] = `
             />
           </svg>
           <span
-            class="world-map__node-title"
+            class="atlas__node-title"
           >
             Базис
           </span>

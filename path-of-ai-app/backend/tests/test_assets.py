@@ -16,6 +16,7 @@ from app.assets import (
     PlaceholderAdapter,
     _select_adapter,
     build_specs,
+    build_ui_specs,
     generate_assets,
 )
 from app.catalog import default_catalog
@@ -39,6 +40,21 @@ class TestBuildSpecs:
         categories = {spec.category for spec in specs}
         assert "classes" in categories
         assert "regions" in categories
+        assert all(spec.prompt for spec in specs)
+
+
+class TestBuildUiSpecs:
+    def test_covers_texture_ids_consumed_by_frontend(self) -> None:
+        specs = build_ui_specs()
+        ids = {spec.category + ":" + spec.id for spec in specs}
+        # id должны совпадать с ключами TEXTURE_VARS в textures.ts.
+        assert ids == {
+            "ui:ui-parchment",
+            "ui:ui-stone",
+            "ui:ui-button",
+            "ui:ui-map-bg",
+            "ui:ui-worldmap",
+        }
         assert all(spec.prompt for spec in specs)
 
 

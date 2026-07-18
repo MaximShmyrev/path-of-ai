@@ -61,6 +61,7 @@ class TopicMapItem(BaseModel):
     id: str
     title: str
     status: TopicStatus
+    prerequisites: list[str] = []  # id тем-пререквизитов (для дерева навыков)
 
 
 class RegionMapItem(BaseModel):
@@ -77,10 +78,15 @@ class MapResponse(BaseModel):
 
 
 class QuizQuestionResponse(BaseModel):
-    """Вопрос квиза БЕЗ эталонного ответа (анти-чит, SPEC §7.8)."""
+    """Вопрос квиза БЕЗ эталонного ответа (анти-чит, SPEC §7.8).
+
+    `explanation` — разбор (почему ответ верный/неверный); показывается в UI
+    после ответа (SPEC §7.10). Эталонный индекс `answer` по-прежнему не отдаётся.
+    """
 
     prompt: str
     options: list[str]
+    explanation: str = ""
 
 
 class QuestResponse(BaseModel):
@@ -88,6 +94,7 @@ class QuestResponse(BaseModel):
     title: str
     kind: QuestKind
     xp: int
+    body: str = ""  # урок (markdown) для theory-квеста (SPEC §7.10)
     quiz: list[QuizQuestionResponse]
 
 
@@ -192,6 +199,7 @@ def get_map(request: Request) -> MapResponse:
                     id=topic.id,
                     title=topic.title,
                     status=unlocks.topic_status[topic.id],
+                    prerequisites=sorted(topic.prerequisites),
                 )
                 for topic in catalog.topics
                 if topic.region_id == region.id
@@ -222,8 +230,13 @@ def get_topic(topic_id: str, request: Request) -> TopicResponse:
             title=quest.title,
             kind=quest.kind,
             xp=quest.xp,
+            body=quest.body,
             quiz=[
-                QuizQuestionResponse(prompt=item.prompt, options=list(item.options))
+                QuizQuestionResponse(
+                    prompt=item.prompt,
+                    options=list(item.options),
+                    explanation=item.explanation,
+                )
                 for item in quest.quiz
             ],
         )
