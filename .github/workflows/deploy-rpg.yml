@@ -1,0 +1,70 @@
+name: Deploy AI Agents RPG
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-rpg
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy production
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      DEPLOY_SHA: ${{ github.sha }}
+
+    steps:
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            test -n "${!name}" || { echo "Missing production secret: $name" >&2; exit 1; }
+          done
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy exact commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_ed25519 \
+            -p "${DEPLOY_PORT:-22}" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -se -- "$DEPLOY_PATH" "$DEPLOY_SHA" <<'REMOTE'
+              set -euo pipefail
+              deploy_path="$1"
+              deploy_sha="$2"
+
+              test -d "$deploy_path/.git"
+              git -C "$deploy_path" fetch --no-tags origin main
+              git -C "$deploy_path" cat-file -e "$deploy_sha^{commit}"
+              git -C "$deploy_path" checkout --detach --force "$deploy_sha"
+              docker compose -f "$deploy_path/docker-compose.yml" up -d --build --remove-orphans
+              curl --fail --silent --show-error --retry 10 --retry-connrefused \
+                http://127.0.0.1:8789/ > /dev/null
+          REMOTE
