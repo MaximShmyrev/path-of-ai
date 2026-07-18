@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agents 2026 — RPG карта обучения</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #090b12;
+  --panel: #151019;
+  --panel2: #211629;
+  --line: #5a4636;
+  --ink: #f3e6c8;
+  --muted: #bba47d;
+  --blood: #8e2527;
+  --ember: #c66d34;
+  --gold: #d9b87a;
+  --arcane: #4a2b55;
+  --green: #68b07a;
+  --blue: #75a7c7;
+  --violet: #b58add;
+  --shadow: rgba(0,0,0,.45);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(74,43,85,.58), transparent 33%),
+    radial-gradient(circle at 18% 10%, rgba(142,37,39,.24), transparent 34%),
+    radial-gradient(circle at 82% 4%, rgba(198,109,52,.18), transparent 28%),
+    linear-gradient(180deg, #0a0c12 0%, #121017 48%, #090b12 100%);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+button, select { font: inherit; }
+.page { width: min(1440px, 100%); margin: 0 auto; padding: 16px; }
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+.eyebrow {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.topbar h1 {
+  margin: 4px 0 4px;
+  font: 900 44px/1 ui-serif, Georgia, serif;
+}
+.topbar p { margin: 0; color: var(--muted); }
+.topStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(78px, 1fr));
+  gap: 8px;
+  min-width: 420px;
+}
+.topStats div {
+  border: 1px solid rgba(217,184,122,.38);
+  background: rgba(10,12,18,.68);
+  border-radius: 6px;
+  padding: 9px;
+}
+.topStats b { display:block; color: var(--gold); font-size: 20px; line-height: 1; }
+.topStats span { color: var(--muted); font-size: 11px; }
+.hallScene {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 14px;
+  align-items: stretch;
+}
+.lowerGrid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 340px;
+  gap: 14px;
+  margin-top: 14px;
+}
+.panel {
+  background:
+    linear-gradient(180deg, rgba(34,22,40,.94), rgba(13,13,18,.97)),
+    radial-gradient(circle at 50% 0%, rgba(217,184,122,.07), transparent 40%);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px var(--shadow);
+}
+.panel, .classPanel, .zonePanel { border-radius: 8px; overflow: hidden; }
+.brand {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(74,43,85,.45), rgba(142,37,39,.22), rgba(217,184,122,.08));
+}
+.brand h1 {
+  margin: 0 0 6px;
+  font: 800 25px/1.05 ui-serif, Georgia, serif;
+  letter-spacing: 0;
+}
+.brand p, .small { margin: 0; color: var(--muted); font-size: 13px; }
+.today {
+  margin: 14px;
+  padding: 14px;
+  border: 1px solid rgba(244,200,106,.55);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(244,200,106,.17), transparent 40%),
+    linear-gradient(145deg, rgba(80,31,25,.8), rgba(20,15,12,.92));
+}
+.todayCommand {
+  padding: 18px;
+  border: 1px solid rgba(217,184,122,.55);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(217,184,122,.16), transparent 38%),
+    linear-gradient(180deg, rgba(40,22,26,.96), rgba(10,12,18,.98));
+  box-shadow: 0 18px 40px var(--shadow);
+}
+.todayCommand h2 {
+  margin: 8px 0 10px;
+  font: 900 31px/1.08 ui-serif, Georgia, serif;
+  overflow-wrap: anywhere;
+}
+.todayCommand p { margin: 8px 0; color: var(--muted); }
+.todayCommand strong { color: var(--ink); }
+.todayLabel {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.today h2 {
+  margin: 6px 0 8px;
+  font: 800 21px/1.12 ui-serif, Georgia, serif;
+  color: var(--ink);
+}
+.today p { margin: 7px 0; color: var(--muted); }
+.today strong { color: var(--ink); }
+.resourceList {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+.resourceList a {
+  display: block;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid #6b4d33;
+  background: rgba(0,0,0,.22);
+  border-radius: 6px;
+  padding: 8px 9px;
+  font-size: 13px;
+}
+.resourceList a:hover { border-color: var(--gold); color: var(--gold); }
+.todayActions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.primaryBtn {
+  color: #170f09;
+  background: linear-gradient(180deg, var(--gold), var(--ember));
+  border: 1px solid #ffd889;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.miniBtn {
+  color: var(--ink);
+  background: rgba(0,0,0,.24);
+  border: 1px solid #6b4d33;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.timeline {
+  padding: 0 14px 14px;
+}
+.timelineTrack {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 3px;
+}
+.tick {
+  height: 22px;
+  border: 1px solid #3d3027;
+  background: #15110f;
+  border-radius: 3px;
+}
+.tick.done { background: linear-gradient(180deg, rgba(104,176,122,.9), rgba(55,103,65,.9)); border-color: rgba(104,176,122,.9); }
+.tick.current { background: linear-gradient(180deg, rgba(244,200,106,.95), rgba(226,139,56,.9)); border-color: var(--gold); box-shadow: 0 0 12px rgba(244,200,106,.38); }
+.legend { display: flex; justify-content: space-between; gap: 10px; margin-top: 7px; color: var(--muted); font-size: 11px; }
+.statGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 14px;
+}
+.stat {
+  padding: 11px;
+  border: 1px solid var(--line);
+  background: rgba(16,13,11,.62);
+  border-radius: 6px;
+}
+.stat b { display: block; font-size: 22px; color: var(--gold); line-height: 1; }
+.stat span { color: var(--muted); font-size: 12px; }
+.bar {
+  height: 12px;
+  border: 1px solid #5a4432;
+  background: #0d0b0a;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--blood), var(--ember), var(--gold));
+}
+.section { padding: 14px; border-top: 1px solid var(--line); }
+.section h2, .zonePanel h2, .classPanel h2 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.classList, .questList { display: grid; gap: 8px; }
+.classCard, .quest, .zoneBtn {
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+  background: rgba(16,13,11,.6);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.classCard {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px;
+}
+.classCard.active { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(244,200,106,.3) inset; }
+.sigil {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(161,47,36,.35), rgba(226,139,56,.16));
+  border: 1px solid #6d4b34;
+  font-size: 19px;
+  overflow: hidden;
+}
+.portrait {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.classCard strong { display: block; font-size: 14px; }
+.classCard span { color: var(--muted); font-size: 12px; }
+.classCard em { color: var(--gold); font-style: normal; font-size: 12px; }
+.mapPanel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.mapHeader {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.mapHeader h2 {
+  margin: 0;
+  font: 800 24px/1.1 ui-serif, Georgia, serif;
+}
+.tools { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.toolBtn {
+  color: var(--ink);
+  background: #211915;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.toolBtn:hover { border-color: var(--gold); }
+.map {
+  position: relative;
+  min-height: auto;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(58,36,64,.88), transparent 34%),
+    radial-gradient(circle at 50% 46%, rgba(217,184,122,.11), transparent 26%),
+    linear-gradient(rgba(217,184,122,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,184,122,.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(10,12,18,.7), rgba(14,9,10,.9));
+  background-size: 42px 42px, 42px 42px, auto;
+}
+.pathSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.zones {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 14px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+.visualBoard {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 14px;
+  max-width: 920px;
+  margin: 0 auto 14px;
+}
+.skillTreeStage {
+  position: relative;
+  z-index: 1;
+  min-height: 560px;
+  max-width: 100%;
+  margin: 0;
+  border: 1px solid rgba(217,184,122,.42);
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(217,184,122,.14), transparent 25%),
+    radial-gradient(circle at 50% 8%, rgba(74,43,85,.78), transparent 45%),
+    linear-gradient(180deg, rgba(10,12,18,.96), rgba(22,13,14,.96));
+}
+.skillTreeStage:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0 9%, rgba(217,184,122,.08) 9% 10%, transparent 10% 90%, rgba(217,184,122,.08) 90% 91%, transparent 91%),
+    radial-gradient(ellipse at 50% 100%, rgba(0,0,0,.38), transparent 54%);
+  pointer-events: none;
+}
+.hallTitle {
+  position: relative;
+  z-index: 2;
+  padding: 22px 24px 0;
+}
+.hallTitle h2 {
+  margin: 0;
+  font: 900 44px/1 ui-serif, Georgia, serif;
+  overflow-wrap: anywhere;
+}
+.hallTitle p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+.skillTreeViewport {
+  position: relative;
+  z-index: 2;
+  width: calc(100% - 56px);
+  min-height: 500px;
+  margin: 26px auto 28px;
+  overflow: hidden;
+  border: 1px solid rgba(217,184,122,.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(217,184,122,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,184,122,.045) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(217,184,122,.12), transparent 28%),
+    rgba(3,5,9,.36);
+  background-size: 34px 34px, 34px 34px, auto, auto;
+}
+.skillTreeLines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.skillTreeLines line {
+  stroke: rgba(117,167,199,.48);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px rgba(117,167,199,.28));
+}
+.skillTreeLines line.active {
+  stroke: rgba(104,176,122,.9);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px rgba(104,176,122,.55));
+}
+.skillTreeNodes {
+  position: absolute;
+  inset: 0;
+}
+.skillNode {
+  position: absolute;
+  width: 82px;
+  min-height: 84px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(217,184,122,.42);
+  border-radius: 4px;
+  padding: 7px 5px 6px;
+  color: var(--ink);
+  text-align: center;
+  background: linear-gradient(180deg, rgba(13,13,18,.84), rgba(31,18,20,.78));
+  box-shadow: 0 12px 24px rgba(0,0,0,.34);
+  cursor: pointer;
+}
+.skillNode.current {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(217,184,122,.34) inset, 0 0 18px rgba(217,184,122,.28), 0 14px 28px rgba(0,0,0,.42);
+}
+.skillNode.done {
+  border-color: rgba(104,176,122,.72);
+  background: linear-gradient(180deg, rgba(20,40,28,.84), rgba(13,18,14,.82));
+}
+.skillNode.locked {
+  opacity: .64;
+  filter: saturate(.72);
+}
+.skillNode b { display:block; margin: 5px 0 3px; font-size:11px; color: var(--ink); line-height: 1.08; overflow-wrap: anywhere; }
+.skillNode span { display:block; color: var(--muted); font-size:10px; line-height: 1.15; }
+.nodeIcon {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(217,184,122,.56);
+  border-radius: 3px;
+  color: var(--gold);
+  background: radial-gradient(circle, rgba(217,184,122,.16), rgba(10,12,18,.92));
+  font: 900 18px/1 ui-serif, Georgia, serif;
+}
+.nodeMeta {
+  margin-top: 5px;
+  color: var(--ember);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.treeLegend {
+  position: absolute;
+  left: 14px;
+  bottom: 10px;
+  display: flex;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.treeLegend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border: 1px solid rgba(217,184,122,.5);
+  vertical-align: -1px;
+}
+.treeLegend .doneKey { background: rgba(104,176,122,.45); border-color: rgba(104,176,122,.8); }
+.treeLegend .todayKey { background: rgba(217,184,122,.42); border-color: var(--gold); }
+.focusFlash {
+  animation: focusFlash 1.2s ease-out;
+}
+@keyframes focusFlash {
+  0% { box-shadow: 0 0 0 0 rgba(217,184,122,.9), 0 0 42px rgba(217,184,122,.34) inset; }
+  100% { box-shadow: 0 0 0 14px rgba(217,184,122,0), 0 0 0 rgba(217,184,122,0) inset; }
+}
+.questFocus, .skillRadar {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16,13,11,.64);
+  padding: 14px;
+}
+.questFocus h3, .skillRadar h3 {
+  margin: 0 0 9px;
+  color: var(--gold);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.questFocus p { margin: 7px 0; color: var(--muted); }
+.questFocus b { color: var(--ink); }
+.skillBar {
+  display: grid;
+  grid-template-columns: 94px 1fr 36px;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.skillBar i {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--blood), var(--ember), var(--gold));
+  width: 0%;
+  display: block;
+}
+.skillBar .rail { background: #0d0b0a; border: 1px solid #4e3a2c; border-radius: 999px; overflow: hidden; }
+.zoneBtn {
+  position: relative;
+  min-height: 116px;
+  padding: 12px 48px 38px 12px;
+  cursor: pointer;
+  background:
+    linear-gradient(145deg, rgba(36,27,21,.94), rgba(16,13,11,.86)),
+    radial-gradient(circle at top right, rgba(226,139,56,.18), transparent 45%);
+}
+.zoneBtn:hover, .zoneBtn.active { border-color: var(--gold); transform: translateY(-1px); }
+.zoneBtn.done { border-color: rgba(104,176,122,.75); }
+.zoneBtn .num { color: var(--ember); font-weight: 800; font-size: 12px; letter-spacing: .08em; line-height: 1.2; }
+.zoneBtn strong { display: block; margin: 6px 0; font-size: 15px; line-height: 1.18; overflow-wrap: anywhere; }
+.zoneBtn span { display: block; color: var(--muted); font-size: 12px; line-height: 1.25; }
+.zoneBtn .seal {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: rgba(244,200,106,.68);
+  font-size: 28px;
+}
+.zoneBtn .todayMark {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  display: inline-block;
+  width: auto;
+  background: rgba(244,200,106,.12);
+}
+.zonePanel .hero {
+  padding: 18px;
+  min-height: 170px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(161,47,36,.28), transparent 38%),
+    linear-gradient(135deg, rgba(44,31,23,.96), rgba(20,15,12,.98));
+  border-bottom: 1px solid var(--line);
+}
+.heroPortrait {
+  width: 92px;
+  height: 92px;
+  float: right;
+  margin: 0 0 10px 12px;
+  border: 1px solid rgba(217,184,122,.58);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0a0c12;
+}
+.zonePanel .hero h2 {
+  font: 800 24px/1.1 ui-serif, Georgia, serif;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.pillRow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.pill {
+  border: 1px solid #654931;
+  color: var(--gold);
+  background: rgba(0,0,0,.2);
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.quest {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 9px;
+  align-items: start;
+  padding: 10px;
+}
+.quest input { margin-top: 3px; accent-color: var(--ember); }
+.quest strong { display: block; font-size: 14px; }
+.quest span { color: var(--muted); font-size: 12px; }
+.quest.done strong { color: var(--green); text-decoration: line-through; text-decoration-thickness: 1px; }
+.artifact {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #5c4633;
+  background: rgba(0,0,0,.2);
+  border-radius: 6px;
+  color: var(--ink);
+}
+.artifact b { color: var(--gold); }
+.resetDanger { color: #ffb4a6; border-color: #71352e; }
+@media (max-width: 1120px) {
+  .topbar, .hallScene { display: block; }
+  .topStats { min-width: 0; margin-top: 12px; }
+  .todayCommand { margin-top: 12px; }
+  .lowerGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .page { padding: 8px; }
+  .panel { margin-bottom: 10px; }
+  .topbar h1 { font-size: 34px; }
+  .hallTitle { padding: 18px 18px 0; }
+  .hallTitle h2 { font-size: 38px; }
+  .todayCommand h2 { font-size: 27px; }
+  .topStats { grid-template-columns: repeat(2, 1fr); }
+  .mapHeader { display: block; }
+  .tools { justify-content: flex-start; margin-top: 10px; }
+  .zones { grid-template-columns: 1fr; gap: 10px; }
+  .zoneBtn { min-height: auto; padding: 11px 44px 36px 11px; }
+  .zoneBtn .num { font-size: 11px; }
+  .zoneBtn strong { font-size: 14px; }
+  .visualBoard { grid-template-columns: 1fr; }
+  .skillTreeViewport { width: calc(100% - 18px); min-height: 450px; overflow: hidden; }
+  .skillNode { width: 62px; min-height: 74px; padding: 5px 3px; }
+  .skillNode b { font-size: 9.5px; }
+  .skillNode span { font-size: 8.5px; }
+  .nodeIcon { width: 26px; height: 26px; font-size: 15px; }
+  .nodeMeta { font-size: 8px; }
+  .map { min-height: auto; padding: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">AI Agents 2026 · Дерево навыков</div>
+      <h1>Совет Пути</h1>
+      <p>Тёмный зал кампании: каждый день приносит приказ, артефакт и след на карте.</p>
+    </div>
+    <div class="topStats">
+      <div><b id="level">1</b><span>уровень</span></div>
+      <div><b id="xp">0</b><span>XP</span></div>
+      <div><b id="rank">Новичок</b><span>ранг</span></div>
+      <div><b id="done">0</b><span>квестов</span></div>
+    </div>
+  </header>
+
+  <main class="hallScene">
+    <section class="skillTreeStage" id="skillTree">
+      <div class="hallBackdrop">
+        <div class="arch archLeft"></div>
+        <div class="arch archRight"></div>
+        <div class="banner bannerLeft"></div>
+        <div class="banner bannerRight"></div>
+      </div>
+      <div class="hallTitle">
+        <h2>Дерево развития навыков</h2>
+        <p>Ветки открываются по мере прохождения зон: математика, Python, ML, LLM, агенты, RAG, оркестрация и продакшн.</p>
+      </div>
+      <div class="skillTreeViewport" aria-label="RPG дерево развития навыков">
+        <svg class="skillTreeLines" id="skillTreeLines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        <div class="skillTreeNodes" id="skillTreeGrid"></div>
+        <div class="treeLegend">
+          <span><i class="doneKey"></i>освоено</span>
+          <span><i class="todayKey"></i>сегодня</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="todayCommand">
+      <div class="todayLabel">Приказ дня</div>
+      <h2 id="todayTitle">День 1</h2>
+      <p id="todayZone">Зона: Врата линейной алгебры</p>
+      <p><strong id="todayQuest">Загрузка квеста...</strong></p>
+      <p id="todayArtifact">Артефакт: короткая заметка.</p>
+      <div class="resourceList" id="focusResources"></div>
+      <div class="todayActions">
+        <button class="primaryBtn" id="completeToday">Сдал артефакт</button>
+        <button class="miniBtn" id="goToday">Перейти к зоне</button>
+      </div>
+      <div class="bar"><i id="bar"></i></div>
+      <p class="small" id="xpHint">До следующего уровня: 100 XP</p>
+    </aside>
+  </main>
+
+  <section class="lowerGrid">
+    <aside class="panel classPanel">
+      <h2>Класс персонажа</h2>
+      <div class="classList" id="classes"></div>
+    </aside>
+
+    <section class="panel mapPanel">
+      <div class="mapHeader">
+        <div>
+          <h2>Карта кампании</h2>
+          <p class="small">24 зоны, 168 дней. Текущая зона подсвечена.</p>
+        </div>
+        <div class="tools">
+          <button class="toolBtn" id="completeZone">Закрыть зону</button>
+          <button class="toolBtn" id="exportState">Экспорт</button>
+          <button class="toolBtn resetDanger" id="resetState">Сброс</button>
+        </div>
+      </div>
+      <div class="timeline">
+        <h2>Путь зон</h2>
+        <div class="timelineTrack" id="timeline"></div>
+        <div class="legend"><span>пройдено</span><span>сегодня</span><span>впереди</span></div>
+      </div>
+      <div class="map">
+        <div class="visualBoard">
+          <div class="questFocus">
+            <h3>Фокус дня</h3>
+            <p id="focusLine">Сегодня открывается первый слой карты.</p>
+            <p><b id="focusArtifact">Артефакт будет показан здесь.</b></p>
+          </div>
+          <div class="skillRadar">
+            <h3>Силы персонажа</h3>
+            <div id="skillBars"></div>
+          </div>
+        </div>
+        <div class="zones" id="zones"></div>
+      </div>
+    </section>
+
+    <aside class="panel zonePanel">
+      <div class="hero">
+        <div class="heroPortrait" id="zonePortrait"></div>
+        <h2 id="zoneTitle">Зона 1 — Врата линейной алгебры</h2>
+        <p id="zoneDesc">Векторы, матрицы и первые руны embeddings.</p>
+        <div class="pillRow" id="zonePills"></div>
+      </div>
+      <div class="section">
+        <h2>Квесты дня</h2>
+        <div class="questList" id="quests"></div>
+        <div class="artifact" id="artifact"></div>
+      </div>
+    </aside>
+  </section>
+</div>
+
+<script>
+const classes = [
+  ["Математик", "Векторы, вероятности, градиенты", "◇"],
+  ["Python-мастер", "Скрипты, данные, автоматизация", "⚙"],
+  ["Охотник за моделями", "ML, метрики, эксперименты", "⌁"],
+  ["Мастер промптов", "LLM, структурированные ответы, инструменты", "✦"],
+  ["Страж агентов", "Циклы, память, планирование, ReAct", "⛨"],
+  ["Архивариус RAG", "Фрагменты, поиск, цитирование", "◆"],
+  ["Командир оркестрации", "Роли, передачи задач, общее состояние", "♜"],
+  ["Инженер продакшна", "Деплой, наблюдаемость, стоимость", "◈"]
+];
+const classPalette = [
+  ["#39264b", "#d9b87a", "#8e2527"],
+  ["#182f3d", "#c66d34", "#75a7c7"],
+  ["#2d3324", "#d9b87a", "#68b07a"],
+  ["#3a2440", "#b58add", "#d9b87a"],
+  ["#2d191a", "#d9b87a", "#8e2527"],
+  ["#172d2d", "#75a7c7", "#d9b87a"],
+  ["#1c2038", "#d9b87a", "#8e2527"],
+  ["#2b241d", "#c66d34", "#d9b87a"]
+];
+const skillBranches = [
+  {id:"root", name:"Искра агента", desc:"Старт кампании", icon:"✦", x:50, y:14, zones:[0], deps:[]},
+  {id:"math", name:"Линейные руны", desc:"векторы и матрицы", icon:"◇", x:20, y:28, zones:[0], deps:["root"]},
+  {id:"python", name:"Клинок Python", desc:"код и данные", icon:"⚙", x:38, y:30, zones:[1], deps:["root"]},
+  {id:"prompt", name:"Печать промпта", desc:"структура ответа", icon:"✦", x:62, y:30, zones:[4], deps:["root"]},
+  {id:"domain", name:"Карта домена", desc:"ценность и ROI", icon:"⚖", x:80, y:28, zones:[8,9], deps:["root"]},
+  {id:"prob", name:"Алхимия вероятностей", desc:"метрики и потери", icon:"⌁", x:16, y:52, zones:[2,3], deps:["math"]},
+  {id:"data", name:"Арсенал данных", desc:"JSON, CSV, Pandas", icon:"▣", x:34, y:56, zones:[1,2], deps:["python"]},
+  {id:"tools", name:"Инструменты LLM", desc:"tools и eval", icon:"⚒", x:50, y:50, zones:[5], deps:["python","prompt"]},
+  {id:"rag", name:"Архив RAG", desc:"retrieval и citations", icon:"◆", x:66, y:56, zones:[6,7], deps:["prompt"]},
+  {id:"workflow", name:"Бизнес-квесты", desc:"research и approvals", icon:"☉", x:84, y:52, zones:[10], deps:["domain","prompt"]},
+  {id:"agent", name:"Страж агента", desc:"память и план", icon:"⛨", x:30, y:76, zones:[11,12], deps:["prob","data","tools"]},
+  {id:"orchestration", name:"Оркестрация", desc:"handoffs и роли", icon:"♜", x:50, y:78, zones:[13,20,21], deps:["tools","rag","workflow"]},
+  {id:"production", name:"Цитадель продакшна", desc:"UI, deploy, cost", icon:"◈", x:70, y:76, zones:[14,15,16,17,18,19,22,23], deps:["rag","workflow"]}
+];
+
+function portraitSvg(i, size = 96) {
+  const c = classes[i % classes.length];
+  const p = classPalette[i % classPalette.length];
+  const face = ["#c89b70", "#b98560", "#d1a77c", "#a97055"][i % 4];
+  const hair = ["#1b1210", "#e0c27c", "#4b2b1f", "#d9d9d9"][i % 4];
+  const helm = i === 4 || i === 6 || i === 7;
+  const hood = i === 0 || i === 3 || i === 5;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Портрет: ${c[0]}">
+    <defs>
+      <radialGradient id="bg${i}" cx="50%" cy="36%" r="70%">
+        <stop offset="0" stop-color="${p[0]}"/>
+        <stop offset="1" stop-color="#080a10"/>
+      </radialGradient>
+      <linearGradient id="robe${i}" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="${p[2]}"/>
+        <stop offset="1" stop-color="#120b08"/>
+      </linearGradient>
+    </defs>
+    <rect width="96" height="96" fill="url(#bg${i})"/>
+    <path d="M15 90 Q23 62 48 62 Q73 62 81 90 Z" fill="url(#robe${i})" stroke="${p[1]}" stroke-width="1.2"/>
+    ${hood ? `<path d="M23 54 Q25 18 48 12 Q71 18 73 54 Q65 35 48 33 Q31 35 23 54 Z" fill="#100b12" stroke="${p[1]}" stroke-width="1.2"/>` : ""}
+    ${helm ? `<path d="M24 40 Q30 15 48 13 Q66 15 72 40 L66 31 L60 39 L48 27 L36 39 L30 31 Z" fill="#1d2028" stroke="${p[1]}" stroke-width="1.4"/>` : ""}
+    <ellipse cx="48" cy="43" rx="18" ry="22" fill="${face}" stroke="#3c2118" stroke-width="1"/>
+    ${!hood && !helm ? `<path d="M29 37 Q33 17 49 18 Q67 20 68 38 Q58 29 48 31 Q38 29 29 37 Z" fill="${hair}"/>` : ""}
+    <path d="M37 43 L43 43" stroke="#190e0b" stroke-width="2" stroke-linecap="round"/>
+    <path d="M53 43 L59 43" stroke="#190e0b" stroke-width="2" stroke-linecap="round"/>
+    <path d="M44 54 Q48 57 52 54" fill="none" stroke="#4a2117" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M48 66 L58 86 L48 80 L38 86 Z" fill="#0a0d12" stroke="${p[1]}" stroke-width="1"/>
+    <circle cx="48" cy="72" r="3.5" fill="${p[1]}"/>
+    <text x="48" y="89" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="${p[1]}">${c[2]}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+const zones = [
+  {t:"Врата линейной алгебры", d:"Векторы, матрицы, трансформации, собственные векторы, градиенты, Байес.", days:"1-7", xp:700, seal:"◇", artifact:"Объяснить агентный цикл через векторы, неопределённость и оптимизацию.", q:["3Blue1Brown видео 1-2 + заметка про вектор и матрицу", "Размерности матриц и умножение", "Трансформации в 2D", "Собственные векторы без формализма", "Градиентный спуск", "Пример Байеса", "Контроль Бездны-1"]},
+  {t:"Кузня Python", d:"Файлы, JSON, CSV, NumPy, Pandas, графики, notebooks.", days:"8-14", xp:700, seal:"⚙", artifact:"Мини-анализ датасета в notebook/markdown.", q:["Скрипт подсчёта частот слов", "API JSON -> CSV", "Cosine similarity в NumPy", "Очистка данных и groupby в Pandas", "Один полезный график", "Чистый narrative в notebook", "Контроль Бездны-2"]},
+  {t:"Охота на модели I", d:"Обучение с учителем, регрессия, классификация, признаки, cross-validation.", days:"15-21", xp:700, seal:"⌁", artifact:"README ML-мини-проекта с метриками.", q:["Объяснение overfitting", "Регрессия + MAE/RMSE", "Классификатор + precision/recall", "Улучшить baseline", "Cross-validation", "Интерпретировать коэффициенты и признаки", "Контроль Бездны-3"]},
+  {t:"Охота на модели II", d:"Кластеризация, PCA, рекомендатели, интуиция RL, режимы отказа.", days:"22-28", xp:700, seal:"⌁", artifact:"Карта ML-концепций для агентных систем.", q:["Интерпретация KMeans", "Интуиция PCA/UMAP", "Рекомендатель по сходству", "Метрики для 3 задач", "Состояние, действие, награда, policy", "Leakage, drift, bias", "Контроль Бездны-4"]},
+  {t:"Башня LLM", d:"Токены, embeddings, prompting, JSON-ответы, tool calling, eval.", days:"29-35", xp:700, seal:"✦", artifact:"Маленький LLM-скрипт.", q:["Параметры sampling", "Поиск по заметкам через embeddings", "3 версии промпта", "Извлечение по JSON schema", "Диаграмма tool calling", "5 eval-кейсов", "Контроль Бездны-5"]},
+  {t:"Цитадель агентного цикла", d:"Наблюдение, размышление, действие, проверка, инструменты, память, планирование, ReAct.", days:"36-42", xp:700, seal:"⛨", artifact:"Дизайн простого агента на 1 страницу.", q:["Псевдокод агентного цикла", "5 tools с входами, выходами и ошибками", "Дизайн памяти", "Workflow vs planning", "ReAct trace", "Рубрика самопроверки", "Контроль Бездны-6"]},
+  {t:"Архив RAG", d:"Chunking, векторные хранилища, eval поиска, reranking, цитирование.", days:"43-49", xp:700, seal:"◆", artifact:"Mini-RAG app.", q:["Диаграмма RAG-архитектуры", "3 стратегии chunking", "Локальный векторный индекс", "10 вопросов для retrieval", "Reranking/filtering", "Ответ с опорой на источники", "Контроль Бездны-7"]},
+  {t:"Зал фреймворков", d:"LangGraph, CrewAI, OpenAI Agents, state machines, восстановление после ошибок.", days:"50-56", xp:700, seal:"♜", artifact:"Рабочий workflow-агент.", q:["Таблица tradeoff фреймворков", "Граф research workflow", "Planner -> executor -> reviewer", "Human-in-the-loop gates", "Статус фоновой задачи", "Retry/fallback/escalation", "Контроль Бездны-8"]},
+  {t:"Доменный выбор", d:"Бизнес-автоматизация: процесс, ROI, данные, риски, границы.", days:"57-63", xp:700, seal:"◌", artifact:"Спецификация первого бизнес-агента.", q:["Выбрать домен", "Описать текущий процесс", "5 болей и ROI", "Инвентаризация данных и API", "Границы автоматизации", "Анализ рисков", "Контроль Бездны-9"]},
+  {t:"Инквизитор исследований", d:"Research-агенты, политика источников, синтез, мониторинг рынка.", days:"64-70", xp:700, seal:"☉", artifact:"Прототип research-агента.", q:["Политика источников", "Workflow поиска, чтения и синтеза", "Рубрика доверия к источникам", "Мини-отчёт по 3 конкурентам", "Дизайн наблюдателя", "Шаблон отчёта", "Контроль Бездны-10"]},
+  {t:"Суд финансов и права", d:"Финансовые, юридические и операционные workflows, аудит, согласования.", days:"71-77", xp:700, seal:"⚖", artifact:"Доменный workflow с согласованиями.", q:["Границы финансового агента", "CSV/Sheet analysis", "Схема извлечения пунктов", "Рубрика triage тикетов", "Формат журнала решений", "Матрица согласований", "Контроль Бездны-11"]},
+  {t:"Военный совет агентов", d:"Роли, передачи задач, общее состояние, разрешение конфликтов, оркестрация.", days:"78-84", xp:700, seal:"♜", artifact:"Дизайн-док мультиагентной системы.", q:["Карта ролей", "Контракт передачи задачи", "Схема состояния миссии", "Разрешение конфликтов", "Поток supervisor", "Политика бюджета", "Контроль Бездны-12"]},
+  {t:"Крепость backend", d:"FastAPI/Fastify, контракты, DB, jobs, auth, файлы.", days:"85-91", xp:700, seal:"◈", artifact:"Минимальный backend агента.", q:["Health endpoint", "Типизированный route/OpenAPI", "DB schema для запусков", "Статус фоновой задачи", "API key/session guard", "Загрузка и скачивание артефактов", "Контроль Бездны-13"]},
+  {t:"Панель управления", d:"Dashboard UX, timelines, logs, согласования, результаты, ошибки.", days:"92-98", xp:700, seal:"▣", artifact:"Рабочий UI shell.", q:["Вайрфрейм", "Timeline запуска", "Панель tool-call", "UI для approve/reject", "Просмотр отчёта", "Состояния loading/failed/retry", "Контроль Бездны-14"]},
+  {t:"Крепость деплоя", d:"Docker, Compose, env, деплой на VM, TLS, backups.", days:"99-105", xp:700, seal:"⬡", artifact:"Задеплоенное агентное приложение.", q:["Dockerfile", "Compose app+db", ".env.example", "Деплой на VM", "HTTPS или локальная альтернатива", "Заметки backup/restore", "Контроль Бездны-15"]},
+  {t:"Обсерватория", d:"Logs, metrics, traces, eval harness, cost controls, runbooks.", days:"106-112", xp:700, seal:"◉", artifact:"Production checklist.", q:["Структурированные логи", "Метрики latency/cost/error", "Trace одного запуска", "Regression evals", "Маршрутизация моделей и бюджеты", "Incident runbook", "Контроль Бездны-16"]},
+  {t:"Проект I: Research Agent", d:"Scope, sources, loop, reports, UI/API, eval.", days:"113-119", xp:900, seal:"☉", artifact:"Демо v1.", q:["PRD", "Загрузка источников", "Рабочий запуск", "Артефакт-отчёт", "Запуск из UI/API", "10 benchmark-задач", "Контроль Бездны-17"]},
+  {t:"Закалка проекта I", d:"Failure modes, citations, caching, cost, deploy, README.", days:"120-126", xp:900, seal:"☉", artifact:"Проект 1 отгружен.", q:["5 исправлений failure modes", "Отчёт с источниками", "Политика кэша", "Оптимизация стоимости", "Полировка URL/деплоя", "README", "Контроль Бездны-18"]},
+  {t:"Проект II: Workflow Agent", d:"Business workflow with input schema, tools, approvals, audit.", days:"127-133", xp:900, seal:"⚖", artifact:"Демо v1.", q:["PRD", "Типизированный intake", "Первый реальный tool", "Human gate", "Сохранённый run log", "Бизнес-артефакт", "Контроль Бездны-19"]},
+  {t:"Закалка проекта II", d:"Tests, security, prompt registry, monitoring, deploy, case study.", days:"134-140", xp:900, seal:"⚖", artifact:"Проект 2 отгружен.", q:["10 тестов", "Матрица прав", "Реестр промптов", "Просмотр логов и dashboard", "Деплой workflow", "Черновик case study", "Контроль Бездны-20"]},
+  {t:"Проект III: Control Plane", d:"Модель миссии, role agents, orchestrator, artifacts, timeline.", days:"141-147", xp:1000, seal:"♜", artifact:"Мультиагентное демо.", q:["Модель миссии", "3 контракта ролей", "Supervisor run", "Workspace/artifacts", "Timeline миссии", "Reviewer/arbiter", "Контроль Бездны-21"]},
+  {t:"Закалка проекта III", d:"Reliability, cost policy, eval missions, security, deploy, docs.", days:"148-154", xp:1000, seal:"♜", artifact:"Проект 3 отгружен.", q:["Retries/timeouts", "Маршрутизация моделей по ролям", "5 eval-миссий", "Границы tools", "Деплой control plane", "README архитектуры", "Контроль Бездны-22"]},
+  {t:"Публичный портал", d:"Portfolio story, demos, case studies, GitHub cleanup, outreach.", days:"155-161", xp:1000, seal:"★", artifact:"Портфолио готово к проверке.", q:["История на одну страницу", "Демо-материалы", "2 разбора", "Чистые репозитории", "Страница портфолио", "20 целей для outreach", "Контроль Бездны-23"]},
+  {t:"Финальное испытание", d:"Capstone brief, live demo, stress tests, polish, review, retrospective.", days:"162-168", xp:1200, seal:"☼", artifact:"Ретроспектива: что изменилось, что отправляется дальше, что должно умереть.", q:["Выбрать сильнейший проект", "5-минутный сценарий демо", "Сломать и исправить top 3", "Финальная полировка", "Внешняя или симулированная проверка", "Финальная сдача", "Закон завершён"]}
+];
+
+const course = {
+  startDate: "2026-05-29",
+  totalDays: 168
+};
+const dayResources = {
+  1: [
+    ["3Blue1Brown — плейлист Essence of Linear Algebra", "https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab"],
+    ["Видео 1 — что такое векторы", "https://www.youtube.com/watch?v=fNk_zzaMoSs"],
+    ["Видео 2 — линейные комбинации, span и базисные векторы", "https://www.youtube.com/watch?v=k7RM-ot2NWY"]
+  ],
+  2: [
+    ["3Blue1Brown — линейные трансформации и матрицы", "https://www.youtube.com/watch?v=kYB8IZa5AuE"],
+    ["3Blue1Brown — умножение матриц как композиция", "https://www.youtube.com/watch?v=XkY2DOUCWMU"],
+    ["Khan Academy — умножение матриц", "https://www.khanacademy.org/math/linear-algebra/matrix-transformations/composition-of-transformations/v/linear-algebra-matrix-product-examples"]
+  ],
+  3: [
+    ["3Blue1Brown — линейные трансформации и матрицы", "https://www.youtube.com/watch?v=kYB8IZa5AuE"],
+    ["Khan Academy — матричные трансформации", "https://www.khanacademy.org/math/linear-algebra/matrix-transformations"]
+  ],
+  4: [
+    ["3Blue1Brown — собственные векторы и значения", "https://www.youtube.com/watch?v=PFDu9oVAE-g"],
+    ["StatQuest — собственные векторы и значения", "https://www.youtube.com/watch?v=ue3yoeZvt8E"]
+  ],
+  5: [
+    ["3Blue1Brown — Градиентный спуск", "https://www.youtube.com/watch?v=IHZwWFHWa-w"],
+    ["StatQuest — градиентный спуск по шагам", "https://www.youtube.com/watch?v=sDv4f4s2SB8"]
+  ],
+  6: [
+    ["StatQuest — теорема Байеса", "https://www.youtube.com/watch?v=9wCnvr7Xw4E"],
+    ["3Blue1Brown — теорема Байеса", "https://www.youtube.com/watch?v=HZGCoVF3YvM"]
+  ],
+  7: [
+    ["Карта курса — полная программа", "PROGRAM_BY_DAY.html"],
+    ["RPG-карта — текущий прогресс", "/"]
+  ]
+};
+const state = JSON.parse(localStorage.getItem("aiAgentsRpgState") || '{"class":0,"done":{}}');
+function currentCourseDay() {
+  const start = new Date(`${course.startDate}T00:00:00`);
+  const now = new Date();
+  const diff = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - start) / 86400000) + 1;
+  return Math.max(1, Math.min(course.totalDays, diff));
+}
+function zoneIndexForDay(day) {
+  return Math.max(0, Math.min(zones.length - 1, Math.floor((day - 1) / 7)));
+}
+function questIndexForDay(day) {
+  return Math.max(0, Math.min(6, (day - 1) % 7));
+}
+const todayDay = currentCourseDay();
+const todayZone = zoneIndexForDay(todayDay);
+const todayQuest = questIndexForDay(todayDay);
+let selected = Number(localStorage.getItem("aiAgentsRpgSelected") || todayZone);
+
+function save() {
+  localStorage.setItem("aiAgentsRpgState", JSON.stringify(state));
+  localStorage.setItem("aiAgentsRpgSelected", String(selected));
+}
+function questKey(z, q) { return `${z}:${q}`; }
+function isDone(z, q) { return !!state.done[questKey(z, q)]; }
+function zoneDone(z) { return zones[z].q.every((_, i) => isDone(z, i)); }
+function totals() {
+  let done = 0, xp = 0;
+  zones.forEach((z, zi) => z.q.forEach((_, qi) => {
+    if (isDone(zi, qi)) { done++; xp += Math.round(z.xp / z.q.length); }
+  }));
+  return {done, xp};
+}
+function rank(level) {
+  if (level >= 20) return "Архонт";
+  if (level >= 15) return "Страж";
+  if (level >= 10) return "Адепт";
+  if (level >= 5) return "Посвященный";
+  return "Новичок";
+}
+function renderStats() {
+  const t = totals();
+  const level = Math.floor(t.xp / 500) + 1;
+  const into = t.xp % 500;
+  document.getElementById("level").textContent = level;
+  document.getElementById("xp").textContent = t.xp;
+  document.getElementById("done").textContent = t.done;
+  document.getElementById("rank").textContent = rank(level);
+  document.getElementById("bar").style.width = `${Math.round(into / 500 * 100)}%`;
+  document.getElementById("xpHint").textContent = `До следующего уровня: ${500 - into} XP`;
+}
+function renderToday() {
+  const z = zones[todayZone];
+  const q = z.q[todayQuest];
+  const links = dayResources[todayDay] || [["Документация OpenAI Agents SDK", "https://openai.github.io/openai-agents-js/"], ["Документация LangGraph", "https://langchain-ai.github.io/langgraph/"]];
+  const linksHtml = links.map(([label, href]) => `<a href="${href}" target="_blank" rel="noopener">${label}</a>`).join("");
+  document.getElementById("todayTitle").textContent = `День ${todayDay}: ${q}`;
+  document.getElementById("todayZone").textContent = `Зона ${todayZone + 1}: ${z.t}`;
+  document.getElementById("todayQuest").textContent = q;
+  document.getElementById("todayArtifact").textContent = `Артефакт: ${z.artifact}`;
+  document.getElementById("focusLine").textContent = `Сегодня учить: ${q}. Это ${todayQuest + 1}-й квест в зоне "${z.t}".`;
+  document.getElementById("focusArtifact").textContent = `Сдать: ${z.artifact}`;
+  document.getElementById("focusResources").innerHTML = linksHtml;
+}
+function renderTimeline() {
+  const root = document.getElementById("timeline");
+  root.innerHTML = "";
+  zones.forEach((_, i) => {
+    const tick = document.createElement("div");
+    tick.className = `tick ${zoneDone(i) ? "done" : ""} ${i === todayZone ? "current" : ""}`;
+    tick.title = `Зона ${i + 1}`;
+    root.appendChild(tick);
+  });
+}
+function renderSkillBars() {
+  const buckets = [
+    ["Математика", [0]],
+    ["Python", [1]],
+    ["ML", [2,3]],
+    ["LLM", [4,5]],
+    ["RAG", [6,7]],
+    ["Бизнес", [8,9,10]],
+    ["Мультиагенты", [11,20,21]],
+    ["Продакшн", [12,13,14,15,16,17,18,19,22,23]]
+  ];
+  const root = document.getElementById("skillBars");
+  root.innerHTML = "";
+  buckets.forEach(([name, ids]) => {
+    let total = 0, done = 0;
+    ids.forEach(zi => {
+      total += zones[zi].q.length;
+      done += zones[zi].q.filter((_, qi) => isDone(zi, qi)).length;
+    });
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const row = document.createElement("div");
+    row.className = "skillBar";
+    row.innerHTML = `<span>${name}</span><span class="rail"><i style="width:${pct}%"></i></span><span>${pct}%</span>`;
+    root.appendChild(row);
+  });
+}
+function renderClasses() {
+  const root = document.getElementById("classes");
+  root.innerHTML = "";
+  classes.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.className = `classCard ${state.class === i ? "active" : ""}`;
+    b.innerHTML = `<div class="sigil"><img class="portrait" src="${portraitSvg(i)}" alt="${c[0]}"></div><div><strong>${c[0]}</strong><span>${c[1]}</span></div><em>${state.class === i ? "выбран" : "сменить"}</em>`;
+    b.onclick = () => { state.class = i; save(); render(); };
+    root.appendChild(b);
+  });
+}
+function renderSkillTree() {
+  const root = document.getElementById("skillTreeGrid");
+  const lines = document.getElementById("skillTreeLines");
+  root.innerHTML = "";
+  lines.innerHTML = "";
+  const byId = Object.fromEntries(skillBranches.map(branch => [branch.id, branch]));
+  const stats = {};
+  skillBranches.forEach(branch => {
+    const total = branch.zones.reduce((sum, zi) => sum + zones[zi].q.length, 0);
+    const done = branch.zones.reduce((sum, zi) => sum + zones[zi].q.filter((_, qi) => isDone(zi, qi)).length, 0);
+    stats[branch.id] = {total, done, complete: total > 0 && done === total};
+  });
+  skillBranches.forEach(branch => {
+    branch.deps.forEach(dep => {
+      const from = byId[dep];
+      if (!from) return;
+      const link = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      link.setAttribute("x1", from.x);
+      link.setAttribute("y1", from.y);
+      link.setAttribute("x2", branch.x);
+      link.setAttribute("y2", branch.y);
+      if (stats[dep]?.complete || stats[branch.id]?.done > 0) link.setAttribute("class", "active");
+      lines.appendChild(link);
+    });
+  });
+  skillBranches.forEach(branch => {
+    const {total, done, complete} = stats[branch.id];
+    const current = branch.zones.includes(todayZone);
+    const locked = branch.deps.length && !branch.deps.some(dep => stats[dep]?.done > 0 || stats[dep]?.complete);
+    const card = document.createElement("button");
+    card.className = `skillNode ${current ? "current" : ""} ${complete ? "done" : ""} ${locked ? "locked" : ""}`;
+    card.style.left = `${branch.x}%`;
+    card.style.top = `${branch.y}%`;
+    card.innerHTML = `<div class="nodeIcon">${branch.icon}</div><b>${branch.name}</b><span>${branch.desc}</span><div class="nodeMeta">${done}/${total} квестов</div>`;
+    card.onclick = () => {
+      selected = branch.zones[0];
+      save();
+      render();
+      document.querySelector(".mapPanel")?.scrollIntoView({behavior:"smooth", block:"start"});
+    };
+    root.appendChild(card);
+  });
+}
+function renderZones() {
+  const root = document.getElementById("zones");
+  root.innerHTML = "";
+  zones.forEach((z, i) => {
+    const b = document.createElement("button");
+    b.className = `zoneBtn ${selected === i ? "active" : ""} ${zoneDone(i) ? "done" : ""}`;
+    const complete = z.q.filter((_, qi) => isDone(i, qi)).length;
+    b.innerHTML = `<div class="num">ЗОНА ${i + 1} · ДНИ ${z.days}</div><strong>${z.t}</strong><span>${complete}/${z.q.length} квестов · ${z.xp} XP</span><div class="seal">${z.seal}</div>`;
+    if (i === todayZone) b.innerHTML += `<span class="pill todayMark">сегодня</span>`;
+    b.onclick = () => { selected = i; save(); render(); };
+    root.appendChild(b);
+  });
+}
+function renderDetail() {
+  const z = zones[selected];
+  const portraitIndex = selected % classes.length;
+  document.getElementById("zonePortrait").innerHTML = `<img class="portrait" src="${portraitSvg(portraitIndex)}" alt="${classes[portraitIndex][0]}">`;
+  document.getElementById("zoneTitle").textContent = `Зона ${selected + 1} — ${z.t}`;
+  document.getElementById("zoneDesc").textContent = z.d;
+  document.getElementById("zonePills").innerHTML = `<span class="pill">Дни ${z.days}</span><span class="pill">${z.xp} XP</span><span class="pill">${z.q.length} квестов</span>`;
+  document.getElementById("artifact").innerHTML = `<b>Артефакт зоны:</b> ${z.artifact}`;
+  const root = document.getElementById("quests");
+  root.innerHTML = "";
+  z.q.forEach((q, i) => {
+    const label = document.createElement("label");
+    label.className = `quest ${isDone(selected, i) ? "done" : ""}`;
+    label.innerHTML = `<input type="checkbox" ${isDone(selected, i) ? "checked" : ""}><div><strong>${q}</strong><span>+${Math.round(z.xp / z.q.length)} XP · День ${Number(z.days.split("-")[0]) + i}</span></div>`;
+    label.querySelector("input").onchange = e => {
+      state.done[questKey(selected, i)] = e.target.checked;
+      if (!e.target.checked) delete state.done[questKey(selected, i)];
+      save();
+      render();
+    };
+    root.appendChild(label);
+  });
+}
+function render() {
+  renderStats();
+  renderToday();
+  renderTimeline();
+  renderSkillBars();
+  renderClasses();
+  renderSkillTree();
+  renderZones();
+  renderDetail();
+}
+document.getElementById("completeToday").onclick = () => {
+  state.done[questKey(todayZone, todayQuest)] = true;
+  selected = todayZone;
+  save();
+  render();
+};
+document.getElementById("goToday").onclick = () => {
+  selected = todayZone;
+  save();
+  render();
+  requestAnimationFrame(() => {
+    const cards = Array.from(document.querySelectorAll(".zoneBtn"));
+    const card = cards[todayZone];
+    if (card) {
+      card.scrollIntoView({behavior: "smooth", block: "center"});
+      card.classList.remove("focusFlash");
+      void card.offsetWidth;
+      card.classList.add("focusFlash");
+    }
+  });
+};
+document.getElementById("completeZone").onclick = () => {
+  zones[selected].q.forEach((_, i) => state.done[questKey(selected, i)] = true);
+  save();
+  render();
+};
+document.getElementById("resetState").onclick = () => {
+  if (confirm("Сбросить весь прогресс?")) {
+    state.done = {};
+    save();
+    render();
+  }
+};
+document.getElementById("exportState").onclick = async () => {
+  const text = JSON.stringify({exportedAt: new Date().toISOString(), class: classes[state.class][0], ...totals(), state}, null, 2);
+  await navigator.clipboard.writeText(text);
+  alert("Прогресс скопирован в буфер.");
+};
+render();
+</script>
+</body>
+</html>
