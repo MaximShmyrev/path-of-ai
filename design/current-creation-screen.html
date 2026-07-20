@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Путь ИИ — экран создания героя (текущее состояние)</title>
+<style>
+
+:root {
+  color-scheme: dark;
+  --bg: #090b12;
+  --panel: #151019;
+  --panel2: #211629;
+  --line: #5a4636;
+  --ink: #f3e6c8;
+  --muted: #bba47d;
+  --blood: #8e2527;
+  --ember: #c66d34;
+  --gold: #d9b87a;
+  --arcane: #4a2b55;
+  --green: #68b07a;
+  --blue: #75a7c7;
+  --violet: #b58add;
+  --shadow: rgba(0,0,0,.45);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(74,43,85,.58), transparent 33%),
+    radial-gradient(circle at 18% 10%, rgba(142,37,39,.24), transparent 34%),
+    radial-gradient(circle at 82% 4%, rgba(198,109,52,.18), transparent 28%),
+    linear-gradient(180deg, #0a0c12 0%, #121017 48%, #090b12 100%);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+button, select, input { font: inherit; }
+/* В файле не было ни одного display:none. !important нужен, потому что
+   .gate ниже задаёт display:flex и перебил бы стиль браузера для [hidden]. */
+[hidden] { display: none !important; }
+.page { width: min(1440px, 100%); margin: 0 auto; padding: 16px; }
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+.eyebrow {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.topbar h1 {
+  margin: 4px 0 4px;
+  font: 900 44px/1 ui-serif, Georgia, serif;
+}
+.topbar p { margin: 0; color: var(--muted); }
+.topStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(78px, 1fr));
+  gap: 8px;
+  min-width: 420px;
+}
+.topStats div {
+  border: 1px solid rgba(217,184,122,.38);
+  background: rgba(10,12,18,.68);
+  border-radius: 6px;
+  padding: 9px;
+}
+.topStats b { display:block; color: var(--gold); font-size: 20px; line-height: 1; }
+.topStats span { color: var(--muted); font-size: 11px; }
+.hallScene {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 14px;
+  align-items: stretch;
+}
+.lowerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 14px;
+  margin-top: 14px;
+}
+.panel {
+  background:
+    linear-gradient(180deg, rgba(34,22,40,.94), rgba(13,13,18,.97)),
+    radial-gradient(circle at 50% 0%, rgba(217,184,122,.07), transparent 40%);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px var(--shadow);
+}
+.panel, .classPanel, .zonePanel { border-radius: 8px; overflow: hidden; }
+.brand {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(74,43,85,.45), rgba(142,37,39,.22), rgba(217,184,122,.08));
+}
+.brand h1 {
+  margin: 0 0 6px;
+  font: 800 25px/1.05 ui-serif, Georgia, serif;
+  letter-spacing: 0;
+}
+.brand p, .small { margin: 0; color: var(--muted); font-size: 13px; }
+.today {
+  margin: 14px;
+  padding: 14px;
+  border: 1px solid rgba(244,200,106,.55);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(244,200,106,.17), transparent 40%),
+    linear-gradient(145deg, rgba(80,31,25,.8), rgba(20,15,12,.92));
+}
+.todayCommand {
+  padding: 18px;
+  border: 1px solid rgba(217,184,122,.55);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(217,184,122,.16), transparent 38%),
+    linear-gradient(180deg, rgba(40,22,26,.96), rgba(10,12,18,.98));
+  box-shadow: 0 18px 40px var(--shadow);
+}
+.todayCommand h2 {
+  margin: 8px 0 10px;
+  font: 900 31px/1.08 ui-serif, Georgia, serif;
+  overflow-wrap: anywhere;
+}
+.todayCommand p { margin: 8px 0; color: var(--muted); }
+.todayCommand strong { color: var(--ink); }
+.todayLabel {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.today h2 {
+  margin: 6px 0 8px;
+  font: 800 21px/1.12 ui-serif, Georgia, serif;
+  color: var(--ink);
+}
+.today p { margin: 7px 0; color: var(--muted); }
+.today strong { color: var(--ink); }
+.resourceList {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+.resourceList a {
+  display: block;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid #6b4d33;
+  background: rgba(0,0,0,.22);
+  border-radius: 6px;
+  padding: 8px 9px;
+  font-size: 13px;
+}
+.resourceList a:hover { border-color: var(--gold); color: var(--gold); }
+.todayActions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.primaryBtn {
+  color: #170f09;
+  background: linear-gradient(180deg, var(--gold), var(--ember));
+  border: 1px solid #ffd889;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: 800;
+}
+.miniBtn {
+  color: var(--ink);
+  background: rgba(0,0,0,.24);
+  border: 1px solid #6b4d33;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.timeline {
+  padding: 0 14px 14px;
+}
+.timelineTrack {
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  gap: 3px;
+}
+.tick {
+  height: 22px;
+  border: 1px solid #3d3027;
+  background: #15110f;
+  border-radius: 3px;
+}
+.tick.done { background: linear-gradient(180deg, rgba(104,176,122,.9), rgba(55,103,65,.9)); border-color: rgba(104,176,122,.9); }
+.tick.current { background: linear-gradient(180deg, rgba(244,200,106,.95), rgba(226,139,56,.9)); border-color: var(--gold); box-shadow: 0 0 12px rgba(244,200,106,.38); }
+.legend { display: flex; justify-content: space-between; gap: 10px; margin-top: 7px; color: var(--muted); font-size: 11px; }
+.statGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 14px;
+}
+.stat {
+  padding: 11px;
+  border: 1px solid var(--line);
+  background: rgba(16,13,11,.62);
+  border-radius: 6px;
+}
+.stat b { display: block; font-size: 22px; color: var(--gold); line-height: 1; }
+.stat span { color: var(--muted); font-size: 12px; }
+.bar {
+  height: 12px;
+  border: 1px solid #5a4432;
+  background: #0d0b0a;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--blood), var(--ember), var(--gold));
+}
+.section { padding: 14px; border-top: 1px solid var(--line); }
+.section h2, .zonePanel h2, .classPanel h2 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.classList, .questList { display: grid; gap: 8px; }
+.classCard, .quest, .zoneBtn {
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+  background: rgba(16,13,11,.6);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.classCard {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px;
+}
+.classCard.active { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(244,200,106,.3) inset; }
+.sigil {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(161,47,36,.35), rgba(226,139,56,.16));
+  border: 1px solid #6d4b34;
+  font-size: 19px;
+  overflow: hidden;
+}
+.portrait {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.classCard strong { display: block; font-size: 14px; }
+.classCard span { color: var(--muted); font-size: 12px; }
+.classCard em { color: var(--gold); font-style: normal; font-size: 12px; }
+.mapPanel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.mapHeader {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.mapHeader h2 {
+  margin: 0;
+  font: 800 24px/1.1 ui-serif, Georgia, serif;
+}
+.tools { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.toolBtn {
+  color: var(--ink);
+  background: #211915;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.toolBtn:hover { border-color: var(--gold); }
+.map {
+  position: relative;
+  min-height: auto;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(58,36,64,.88), transparent 34%),
+    radial-gradient(circle at 50% 46%, rgba(217,184,122,.11), transparent 26%),
+    linear-gradient(rgba(217,184,122,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,184,122,.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(10,12,18,.7), rgba(14,9,10,.9));
+  background-size: 42px 42px, 42px 42px, auto;
+}
+.pathSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.zones {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 14px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+.visualBoard {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 14px;
+  max-width: 920px;
+  margin: 0 auto 14px;
+}
+.skillTreeStage {
+  position: relative;
+  z-index: 1;
+  min-height: 560px;
+  max-width: 100%;
+  margin: 0;
+  border: 1px solid rgba(217,184,122,.42);
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(217,184,122,.14), transparent 25%),
+    radial-gradient(circle at 50% 8%, rgba(74,43,85,.78), transparent 45%),
+    linear-gradient(180deg, rgba(10,12,18,.96), rgba(22,13,14,.96));
+}
+.skillTreeStage:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0 9%, rgba(217,184,122,.08) 9% 10%, transparent 10% 90%, rgba(217,184,122,.08) 90% 91%, transparent 91%),
+    radial-gradient(ellipse at 50% 100%, rgba(0,0,0,.38), transparent 54%);
+  pointer-events: none;
+}
+.hallTitle {
+  position: relative;
+  z-index: 2;
+  padding: 22px 24px 0;
+}
+.hallTitle h2 {
+  margin: 0;
+  font: 900 44px/1 ui-serif, Georgia, serif;
+  overflow-wrap: anywhere;
+}
+.hallTitle p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+.skillTreeViewport {
+  position: relative;
+  z-index: 2;
+  width: calc(100% - 56px);
+  min-height: 500px;
+  margin: 26px auto 28px;
+  overflow: hidden;
+  border: 1px solid rgba(217,184,122,.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(217,184,122,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(217,184,122,.045) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, rgba(217,184,122,.12), transparent 28%),
+    rgba(3,5,9,.36);
+  background-size: 34px 34px, 34px 34px, auto, auto;
+}
+.skillTreeLines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.skillTreeLines line {
+  stroke: rgba(117,167,199,.48);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px rgba(117,167,199,.28));
+}
+.skillTreeLines line.active {
+  stroke: rgba(104,176,122,.9);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px rgba(104,176,122,.55));
+}
+.skillTreeNodes {
+  position: absolute;
+  inset: 0;
+}
+.skillNode {
+  position: absolute;
+  width: 82px;
+  min-height: 84px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(217,184,122,.42);
+  border-radius: 4px;
+  padding: 7px 5px 6px;
+  color: var(--ink);
+  text-align: center;
+  background: linear-gradient(180deg, rgba(13,13,18,.84), rgba(31,18,20,.78));
+  box-shadow: 0 12px 24px rgba(0,0,0,.34);
+  cursor: pointer;
+}
+.skillNode.current {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(217,184,122,.34) inset, 0 0 18px rgba(217,184,122,.28), 0 14px 28px rgba(0,0,0,.42);
+}
+.skillNode.done {
+  border-color: rgba(104,176,122,.72);
+  background: linear-gradient(180deg, rgba(20,40,28,.84), rgba(13,18,14,.82));
+}
+.skillNode.locked {
+  opacity: .64;
+  filter: saturate(.72);
+}
+.skillNode b { display:block; margin: 5px 0 3px; font-size:11px; color: var(--ink); line-height: 1.08; overflow-wrap: anywhere; }
+.skillNode span { display:block; color: var(--muted); font-size:10px; line-height: 1.15; }
+.nodeIcon {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(217,184,122,.56);
+  border-radius: 3px;
+  color: var(--gold);
+  background: radial-gradient(circle, rgba(217,184,122,.16), rgba(10,12,18,.92));
+  font: 900 18px/1 ui-serif, Georgia, serif;
+}
+.nodeMeta {
+  margin-top: 5px;
+  color: var(--ember);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.treeLegend {
+  position: absolute;
+  left: 14px;
+  bottom: 10px;
+  display: flex;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.treeLegend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  border: 1px solid rgba(217,184,122,.5);
+  vertical-align: -1px;
+}
+.treeLegend .doneKey { background: rgba(104,176,122,.45); border-color: rgba(104,176,122,.8); }
+.treeLegend .todayKey { background: rgba(217,184,122,.42); border-color: var(--gold); }
+.focusFlash {
+  animation: focusFlash 1.2s ease-out;
+}
+@keyframes focusFlash {
+  0% { box-shadow: 0 0 0 0 rgba(217,184,122,.9), 0 0 42px rgba(217,184,122,.34) inset; }
+  100% { box-shadow: 0 0 0 14px rgba(217,184,122,0), 0 0 0 rgba(217,184,122,0) inset; }
+}
+.questFocus, .skillRadar {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16,13,11,.64);
+  padding: 14px;
+}
+.questFocus h3, .skillRadar h3 {
+  margin: 0 0 9px;
+  color: var(--gold);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.questFocus p { margin: 7px 0; color: var(--muted); }
+.questFocus b { color: var(--ink); }
+.skillBar {
+  display: grid;
+  grid-template-columns: 94px 1fr 36px;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.skillBar i {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--blood), var(--ember), var(--gold));
+  width: 0%;
+  display: block;
+}
+.skillBar .rail { background: #0d0b0a; border: 1px solid #4e3a2c; border-radius: 999px; overflow: hidden; }
+.zoneBtn {
+  position: relative;
+  min-height: 116px;
+  padding: 12px 48px 38px 12px;
+  cursor: pointer;
+  background:
+    linear-gradient(145deg, rgba(36,27,21,.94), rgba(16,13,11,.86)),
+    radial-gradient(circle at top right, rgba(226,139,56,.18), transparent 45%);
+}
+.zoneBtn:hover, .zoneBtn.active { border-color: var(--gold); transform: translateY(-1px); }
+.zoneBtn.done { border-color: rgba(104,176,122,.75); }
+.zoneBtn .num { color: var(--ember); font-weight: 800; font-size: 12px; letter-spacing: .08em; line-height: 1.2; }
+.zoneBtn strong { display: block; margin: 6px 0; font-size: 15px; line-height: 1.18; overflow-wrap: anywhere; }
+.zoneBtn span { display: block; color: var(--muted); font-size: 12px; line-height: 1.25; }
+.zoneBtn .seal {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: rgba(244,200,106,.68);
+  font-size: 28px;
+}
+.zoneBtn .todayMark {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  display: inline-block;
+  width: auto;
+  background: rgba(244,200,106,.12);
+}
+.zonePanel .hero {
+  padding: 18px;
+  min-height: 170px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(161,47,36,.28), transparent 38%),
+    linear-gradient(135deg, rgba(44,31,23,.96), rgba(20,15,12,.98));
+  border-bottom: 1px solid var(--line);
+}
+.heroPortrait {
+  width: 92px;
+  height: 92px;
+  float: right;
+  margin: 0 0 10px 12px;
+  border: 1px solid rgba(217,184,122,.58);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0a0c12;
+}
+.zonePanel .hero h2 {
+  font: 800 24px/1.1 ui-serif, Georgia, serif;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.pillRow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.pill {
+  border: 1px solid #654931;
+  color: var(--gold);
+  background: rgba(0,0,0,.2);
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.quest {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 9px;
+  align-items: center;
+  padding: 10px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(90,70,54,.55);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+.quest:hover { border-color: var(--gold); }
+.quest.active { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(244,200,106,.3) inset; }
+.quest strong { display: block; font-size: 14px; }
+.quest span { color: var(--muted); font-size: 12px; }
+.quest.done strong { color: var(--green); text-decoration: line-through; text-decoration-thickness: 1px; }
+.artifact {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #5c4633;
+  background: rgba(0,0,0,.2);
+  border-radius: 6px;
+  color: var(--ink);
+}
+.artifact b { color: var(--gold); }
+.resetDanger { color: #ffb4a6; border-color: #71352e; }
+@media (max-width: 1120px) {
+  .topbar, .hallScene { display: block; }
+  .topStats { min-width: 0; margin-top: 12px; }
+  .playerCard { margin-top: 12px; }
+  .todayCommand { margin-top: 12px; }
+  .lowerGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .page { padding: 8px; }
+  .panel { margin-bottom: 10px; }
+  .topbar h1 { font-size: 34px; }
+  .hallTitle { padding: 18px 18px 0; }
+  .hallTitle h2 { font-size: 38px; }
+  .todayCommand h2 { font-size: 27px; }
+  .topStats { grid-template-columns: repeat(2, 1fr); }
+  .mapHeader { display: block; }
+  .tools { justify-content: flex-start; margin-top: 10px; }
+  .zones { grid-template-columns: 1fr; gap: 10px; }
+  .zoneBtn { min-height: auto; padding: 11px 44px 36px 11px; }
+  .zoneBtn .num { font-size: 11px; }
+  .zoneBtn strong { font-size: 14px; }
+  .visualBoard { grid-template-columns: 1fr; }
+  .skillTreeViewport { width: calc(100% - 18px); min-height: 450px; overflow: hidden; }
+  .skillNode { width: 62px; min-height: 74px; padding: 5px 3px; }
+  .skillNode b { font-size: 9.5px; }
+  .skillNode span { font-size: 8.5px; }
+  .nodeIcon { width: 26px; height: 26px; font-size: 15px; }
+  .nodeMeta { font-size: 8px; }
+  .map { min-height: auto; padding: 12px; }
+  .gateCard { padding: 14px; }
+  .gateGrid { grid-template-columns: 1fr; }
+  .gateGridAvatars { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* --- Викторина дня --- */
+.questPanel { padding: 0 0 14px; }
+#questBody { padding: 0 16px; }
+.qCard {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 12px 13px;
+  margin-bottom: 10px;
+  background: linear-gradient(180deg, rgba(33,22,41,.72), rgba(13,13,18,.86));
+}
+.qCard.correct { border-color: rgba(104,176,122,.75); }
+.qCard.wrong { border-color: rgba(142,37,39,.85); }
+.qCard.skipped { opacity: .55; }
+.qNum { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.qPrompt { margin: 5px 0 10px; font-weight: 700; line-height: 1.35; }
+.qOpt {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(90,70,54,.55);
+  border-radius: 6px;
+  cursor: pointer;
+  background: rgba(0,0,0,.22);
+}
+.qOpt:hover { border-color: var(--gold); }
+.qOpt.picked { border-color: var(--gold); background: rgba(217,184,122,.1); }
+.qOpt.isRight { border-color: var(--green); background: rgba(104,176,122,.13); }
+.qOpt.isWrong { border-color: var(--blood); background: rgba(142,37,39,.16); }
+.qOpt.gone { opacity: .3; text-decoration: line-through; pointer-events: none; }
+.qOpt input { margin: 3px 0 0; }
+.qHint, .qExplain {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-left: 2px solid var(--gold);
+  background: rgba(217,184,122,.07);
+  font-size: 13px;
+  color: var(--muted);
+}
+.qExplain b { color: var(--ink); }
+.questActions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.questVerdict { font-weight: 800; }
+.questVerdict.pass { color: var(--green); }
+.questVerdict.fail { color: #ffb4a6; }
+.mapCollapse {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 0;
+  margin-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.pill.statusPill { background: rgba(0,0,0,.3); }
+.pill.statusPill.todo { color: var(--muted); }
+.criteria { margin: 0; padding: 0; list-style: none; }
+.criteria label {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 9px 10px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(90,70,54,.55);
+  border-radius: 6px;
+  cursor: pointer;
+  background: rgba(0,0,0,.22);
+}
+.abilityNote { margin: 10px 16px 0; font-size: 13px; color: var(--gold); }
+
+/* --- Экран создания героя --- */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(74,43,85,.6), transparent 36%),
+    radial-gradient(circle at 18% 12%, rgba(142,37,39,.28), transparent 36%),
+    linear-gradient(180deg, #0a0c12 0%, #121017 48%, #090b12 100%);
+}
+.gateCard {
+  width: min(720px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 22px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px var(--shadow);
+  background:
+    linear-gradient(180deg, rgba(34,22,40,.94), rgba(13,13,18,.97)),
+    radial-gradient(circle at 50% 0%, rgba(217,184,122,.07), transparent 40%);
+}
+.gateBrand h1 { margin: 6px 0 6px; font: 800 34px/1.05 ui-serif, Georgia, serif; }
+.gateBrand p { margin: 0 0 18px; color: var(--muted); }
+.gateField { display: block; margin-bottom: 16px; }
+.gateField > span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+#gateName {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,.28);
+  color: var(--ink);
+}
+#gateName:focus { border-color: var(--gold); outline: none; }
+.gateGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 8px; }
+.gateGridAvatars { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+.gateTile {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 9px;
+  align-items: center;
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(33,22,41,.9), rgba(13,13,18,.95));
+  color: var(--ink);
+}
+.gateTile.active { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(244,200,106,.3) inset; }
+.gateTile strong { display: block; font-size: 13px; }
+.gateTile span { display: block; font-size: 11px; color: var(--muted); }
+.gateTile img { width: 42px; height: 42px; border-radius: 5px; display: block; }
+.gateGridAvatars .gateTile { grid-template-columns: 1fr; justify-items: center; padding: 6px; }
+.gateGridAvatars .gateTile img { width: 100%; height: auto; }
+.gateError { margin: 0 0 12px; color: #ffb4a6; font-size: 13px; }
+.gateSubmit { width: 100%; padding: 12px; font-size: 15px; }
+
+/* --- Карточка героя в шапке --- */
+.playerCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(33,22,41,.9), rgba(13,13,18,.95));
+}
+.playerCard img { width: 44px; height: 44px; border-radius: 6px; display: block; }
+.playerCard strong { display: block; font: 800 16px/1.15 ui-serif, Georgia, serif; }
+.playerCard span { display: block; font-size: 11.5px; color: var(--muted); }
+.playerCard em { display: block; font-size: 10.5px; color: var(--gold); font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
+
+/* Снимок: гейт всегда виден, приложения за ним нет. */
+.gate { position: static; min-height: 100vh; }
+</style>
+</head>
+<body>
+<section class="gate" id="gate">
+  <form class="gateCard" id="gateForm">
+    <div class="gateBrand">
+      <div class="eyebrow">AI Agents 2026 · Совет Пути</div>
+      <h1>Создание героя</h1>
+      <p>Назови себя, выбери путь и внешность. День регистрации станет первым днём кампании.</p>
+    </div>
+    <label class="gateField">
+      <span>Имя героя</span>
+      <input id="gateName" type="text" maxlength="24" autocomplete="off" placeholder="Как тебя звать?">
+    </label>
+    <div class="gateField">
+      <span>Класс</span>
+      <div class="gateGrid" id="gateClasses">
+      <button type="button" class="gateTile active"><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_0)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Математик"><div><strong>Математик</strong><span>Векторы, вероятности, градиенты</span></div></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20Python-%D0%BC%D0%B0%D1%81%D1%82%D0%B5%D1%80%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg1_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23182f3d%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe1_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2375a7c7%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg1_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe1_0)%22%20stroke%3D%22%23c66d34%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23c66d34%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23c66d34%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23c66d34%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23c66d34%22%3E%E2%9A%99%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Python-мастер"><div><strong>Python-мастер</strong><span>Скрипты, данные, автоматизация</span></div></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9E%D1%85%D0%BE%D1%82%D0%BD%D0%B8%D0%BA%20%D0%B7%D0%B0%20%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D1%8F%D0%BC%D0%B8%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg2_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232d3324%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe2_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2368b07a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg2_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe2_0)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%8C%81%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Охотник за моделями"><div><strong>Охотник за моделями</strong><span>ML, метрики, эксперименты</span></div></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%81%D1%82%D0%B5%D1%80%20%D0%BF%D1%80%D0%BE%D0%BC%D0%BF%D1%82%D0%BE%D0%B2%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg3_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%233a2440%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe3_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg3_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe3_0)%22%20stroke%3D%22%23b58add%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23b58add%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23b58add%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23b58add%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23b58add%22%3E%E2%9C%A6%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Мастер промптов"><div><strong>Мастер промптов</strong><span>LLM, структурированные ответы, инструменты</span></div></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%A1%D1%82%D1%80%D0%B0%D0%B6%20%D0%B0%D0%B3%D0%B5%D0%BD%D1%82%D0%BE%D0%B2%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg4_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232d191a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe4_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg4_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe4_0)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%9B%A8%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Страж агентов"><div><strong>Страж агентов</strong><span>Циклы, память, планирование, ReAct</span></div></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%90%D1%80%D1%85%D0%B8%D0%B2%D0%B0%D1%80%D0%B8%D1%83%D1%81%20RAG%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg5_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23172d2d%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe5_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg5_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe5_0)%22%20stroke%3D%22%2375a7c7%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%2375a7c7%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%2375a7c7%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%2375a7c7%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%2375a7c7%22%3E%E2%97%86%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Архивариус RAG"><div><strong>Архивариус RAG</strong><span>Фрагменты, поиск, цитирование</span></div></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9A%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4%D0%B8%D1%80%20%D0%BE%D1%80%D0%BA%D0%B5%D1%81%D1%82%D1%80%D0%B0%D1%86%D0%B8%D0%B8%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg6_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c2038%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe6_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg6_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe6_0)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%99%9C%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Командир оркестрации"><div><strong>Командир оркестрации</strong><span>Роли, передачи задач, общее состояние</span></div></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%98%D0%BD%D0%B6%D0%B5%D0%BD%D0%B5%D1%80%20%D0%BF%D1%80%D0%BE%D0%B4%D0%B0%D0%BA%D1%88%D0%BD%D0%B0%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg7_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232b241d%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe7_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg7_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe7_0)%22%20stroke%3D%22%23c66d34%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23c66d34%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23c66d34%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23c66d34%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23c66d34%22%3E%E2%97%88%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Инженер продакшна"><div><strong>Инженер продакшна</strong><span>Деплой, наблюдаемость, стоимость</span></div></button>
+    </div>
+    </div>
+    <div class="gateField">
+      <span>Внешность</span>
+      <div class="gateGrid gateGridAvatars" id="gateAvatars">
+      <button type="button" class="gateTile active"><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_0%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_0%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_0)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_0)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c89b70%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Внешность 1"></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_1%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_1%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_1)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_1)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23b98560%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M29%2037%20Q33%2017%2049%2018%20Q67%2020%2068%2038%20Q58%2029%2048%2031%20Q38%2029%2029%2037%20Z%22%20fill%3D%22%23e0c27c%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Внешность 2"></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_2%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_2%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_2)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_2)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M24%2040%20Q30%2015%2048%2013%20Q66%2015%2072%2040%20L66%2031%20L60%2039%20L48%2027%20L36%2039%20L30%2031%20Z%22%20fill%3D%22%231d2028%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.4%22%2F%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23d1a77c%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Внешность 3"></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_3%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_3%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_3)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_3)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23a97055%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Внешность 4"></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_4%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_4%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_4)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_4)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M24%2040%20Q30%2015%2048%2013%20Q66%2015%2072%2040%20L66%2031%20L60%2039%20L48%2027%20L36%2039%20L30%2031%20Z%22%20fill%3D%22%231d2028%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.4%22%2F%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23e0b48c%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Внешность 5"></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_5%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_5%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_5)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_5)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%238d5a3f%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M29%2037%20Q33%2017%2049%2018%20Q67%2020%2068%2038%20Q58%2029%2048%2031%20Q38%2029%2029%2037%20Z%22%20fill%3D%22%23c9a227%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Внешность 6"></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_6%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_6%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_6)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_6)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M23%2054%20Q25%2018%2048%2012%20Q71%2018%2073%2054%20Q65%2035%2048%2033%20Q31%2035%2023%2054%20Z%22%20fill%3D%22%23100b12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23c08a63%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Внешность 7"></button>
+      <button type="button" class="gateTile "><img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%2096%22%20role%3D%22img%22%20aria-label%3D%22%D0%9F%D0%BE%D1%80%D1%82%D1%80%D0%B5%D1%82%3A%20%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%22%3E%0A%20%20%20%20%3Cdefs%3E%0A%20%20%20%20%20%20%3CradialGradient%20id%3D%22bg0_7%22%20cx%3D%2250%25%22%20cy%3D%2236%25%22%20r%3D%2270%25%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2339264b%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23080a10%22%2F%3E%0A%20%20%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%20%20%3ClinearGradient%20id%3D%22robe0_7%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%238e2527%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23120b08%22%2F%3E%0A%20%20%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3C%2Fdefs%3E%0A%20%20%20%20%3Crect%20width%3D%2296%22%20height%3D%2296%22%20fill%3D%22url(%23bg0_7)%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M15%2090%20Q23%2062%2048%2062%20Q73%2062%2081%2090%20Z%22%20fill%3D%22url(%23robe0_7)%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.2%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M24%2040%20Q30%2015%2048%2013%20Q66%2015%2072%2040%20L66%2031%20L60%2039%20L48%2027%20L36%2039%20L30%2031%20Z%22%20fill%3D%22%231d2028%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221.4%22%2F%3E%0A%20%20%20%20%3Cellipse%20cx%3D%2248%22%20cy%3D%2243%22%20rx%3D%2218%22%20ry%3D%2222%22%20fill%3D%22%23b07c58%22%20stroke%3D%22%233c2118%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%0A%20%20%20%20%3Cpath%20d%3D%22M37%2043%20L43%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M53%2043%20L59%2043%22%20stroke%3D%22%23190e0b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M44%2054%20Q48%2057%2052%2054%22%20fill%3D%22none%22%20stroke%3D%22%234a2117%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M48%2066%20L58%2086%20L48%2080%20L38%2086%20Z%22%20fill%3D%22%230a0d12%22%20stroke%3D%22%23d9b87a%22%20stroke-width%3D%221%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%2248%22%20cy%3D%2272%22%20r%3D%223.5%22%20fill%3D%22%23d9b87a%22%2F%3E%0A%20%20%20%20%3Ctext%20x%3D%2248%22%20y%3D%2289%22%20text-anchor%3D%22middle%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2213%22%20fill%3D%22%23d9b87a%22%3E%E2%97%87%3C%2Ftext%3E%0A%20%20%3C%2Fsvg%3E" alt="Внешность 8"></button>
+    </div>
+    </div>
+    <p class="gateError" id="gateError" hidden>Введи имя героя.</p>
+    <button class="primaryBtn gateSubmit" type="submit">Начать путь</button>
+  </form>
+</section>
+</body>
+</html>
