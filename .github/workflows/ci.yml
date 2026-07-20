@@ -1,0 +1,54 @@
+name: CI
+
+# Гоняется на каждый push и pull request. В отличие от деплоя, секретов
+# не требует, поэтому работает сразу и на форках.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Тесты и валидатор банка
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Валидатор банка вопросов
+        run: node tools/check-questions.js
+
+      - name: Покрытие банка
+        run: node tools/check-questions.js --coverage
+
+      - name: Тесты приложения
+        run: node tests/run.js
+
+      - name: Сборка образа
+        run: docker build -t path-of-ai:ci .
+
+      - name: Контейнер отвечает и отдаёт банк
+        run: |
+          set -euo pipefail
+          docker run -d --name ci -p 8789:80 path-of-ai:ci
+          # Ждём готовности, а не спим наугад.
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8789/ >/dev/null 2>&1 && break
+            [ "$i" = 30 ] && { docker logs ci; exit 1; }
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8789/ >/dev/null
+          # questions.js должен отдаваться как JS, а не редиректом на /
+          type=$(curl -fsS -o /dev/null -w '%{content_type}' http://127.0.0.1:8789/questions.js)
+          case "$type" in
+            application/javascript*) echo "questions.js: $type" ;;
+            *) echo "questions.js отдаётся как '$type', ожидался application/javascript" >&2; exit 1 ;;
+          esac
+          docker rm -f ci >/dev/null

@@ -34,7 +34,10 @@ body {
   color: var(--ink);
   font: 15px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-button, select { font: inherit; }
+button, select, input { font: inherit; }
+/* В файле не было ни одного display:none. !important нужен, потому что
+   .gate ниже задаёт display:flex и перебил бы стиль браузера для [hidden]. */
+[hidden] { display: none !important; }
 .page { width: min(1440px, 100%); margin: 0 auto; padding: 16px; }
 .topbar {
   display: flex;
@@ -77,7 +80,7 @@ button, select { font: inherit; }
 }
 .lowerGrid {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 14px;
   margin-top: 14px;
 }
@@ -570,12 +573,21 @@ button, select { font: inherit; }
 }
 .quest {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr auto;
   gap: 9px;
-  align-items: start;
+  align-items: center;
   padding: 10px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(90,70,54,.55);
+  border-radius: 6px;
+  margin-bottom: 6px;
 }
-.quest input { margin-top: 3px; accent-color: var(--ember); }
+.quest:hover { border-color: var(--gold); }
+.quest.active { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(244,200,106,.3) inset; }
 .quest strong { display: block; font-size: 14px; }
 .quest span { color: var(--muted); font-size: 12px; }
 .quest.done strong { color: var(--green); text-decoration: line-through; text-decoration-thickness: 1px; }
@@ -592,6 +604,7 @@ button, select { font: inherit; }
 @media (max-width: 1120px) {
   .topbar, .hallScene { display: block; }
   .topStats { min-width: 0; margin-top: 12px; }
+  .playerCard { margin-top: 12px; }
   .todayCommand { margin-top: 12px; }
   .lowerGrid { grid-template-columns: 1fr; }
 }
@@ -617,17 +630,422 @@ button, select { font: inherit; }
   .nodeIcon { width: 26px; height: 26px; font-size: 15px; }
   .nodeMeta { font-size: 8px; }
   .map { min-height: auto; padding: 12px; }
+  .gateCard { padding: 14px; }
+  .gateGrid { grid-template-columns: 1fr; }
+  .gateGridAvatars { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* --- Викторина дня --- */
+.questPanel { padding: 0 0 14px; }
+#questBody { padding: 0 16px; }
+.qCard {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 12px 13px;
+  margin-bottom: 10px;
+  background: linear-gradient(180deg, rgba(33,22,41,.72), rgba(13,13,18,.86));
+}
+.qCard.correct { border-color: rgba(104,176,122,.75); }
+.qCard.wrong { border-color: rgba(142,37,39,.85); }
+.qCard.skipped { opacity: .55; }
+.qNum { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.qPrompt { margin: 5px 0 10px; font-weight: 700; line-height: 1.35; }
+.qOpt {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(90,70,54,.55);
+  border-radius: 6px;
+  cursor: pointer;
+  background: rgba(0,0,0,.22);
+}
+.qOpt:hover { border-color: var(--gold); }
+.qOpt.picked { border-color: var(--gold); background: rgba(217,184,122,.1); }
+.qOpt.isRight { border-color: var(--green); background: rgba(104,176,122,.13); }
+.qOpt.isWrong { border-color: var(--blood); background: rgba(142,37,39,.16); }
+.qOpt.gone { opacity: .3; text-decoration: line-through; pointer-events: none; }
+.qOpt input { margin: 3px 0 0; }
+.qHint, .qExplain {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-left: 2px solid var(--gold);
+  background: rgba(217,184,122,.07);
+  font-size: 13px;
+  color: var(--muted);
+}
+.qExplain b { color: var(--ink); }
+.questActions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.questVerdict { font-weight: 800; }
+.questVerdict.pass { color: var(--green); }
+.questVerdict.fail { color: #ffb4a6; }
+.mapCollapse {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 0;
+  margin-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.pill.statusPill { background: rgba(0,0,0,.3); }
+.pill.statusPill.todo { color: var(--muted); }
+.criteria { margin: 0; padding: 0; list-style: none; }
+.criteria label {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 9px 10px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(90,70,54,.55);
+  border-radius: 6px;
+  cursor: pointer;
+  background: rgba(0,0,0,.22);
+}
+.abilityNote { margin: 10px 16px 0; font-size: 13px; color: var(--gold); }
+
+/* --- Экран создания героя ---
+   Стили и переменные намеренно объявлены на #gate, а не на :root и body:
+   у приложения свои --bg/--ink/--line/--muted, и глобальное объявление
+   перекрасило бы основной экран. */
+#gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  color-scheme: dark;
+  --bg:#0a090e;
+  --ink:#eadfc4;
+  --muted:#b6a683;
+  --gold:#d9b87a;
+  --gold-hi:#f2d9a0;
+  --bronze:#8f7448;
+  --ember:#d07a35;
+  --line:#4d3d2a;
+  --err:#ffa294;
+  --glow:rgba(224,150,64,.55);
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  margin:0;
+  color:var(--ink);
+  font:14px/1.5 var(--sans);
+  background:
+    radial-gradient(ellipse 60% 42% at 50% 30%, rgba(214,126,44,.14), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 50% 8%, rgba(120,60,110,.12), transparent 70%),
+    repeating-linear-gradient(115deg, rgba(255,235,190,.012) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg,#0c0a10 0%, #0a090e 45%, #060509 100%);
+}
+#gate::after{ /* виньетка */
+  /* виньетка */
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:6;
+  background:radial-gradient(ellipse 75% 62% at 50% 42%, transparent 55%, rgba(0,0,0,.62) 100%);
+}
+
+/* ===== Токены =====
+   --bg          основной фон сцены
+   --ink         основной текст
+   --muted       вторичный текст
+   --gold        тёплое золото (заголовки, подписи)
+   --gold-hi     светлый блик золота
+   --bronze      тёмная бронза (рамы, металл)
+   --ember       огненный акцент (кнопка, свечения)
+   --line        цвет тонких линий/границ панелей
+   --err         цвет ошибки
+   --glow        тёплое свечение выбранного (rgba)
+*/
+
+/* Правило дизайнера было на html+body и перекрасило бы фон всего приложения —
+   перенесено на сам #gate ниже. Здесь остаётся только безопасный сброс. */
+#gate *{box-sizing:border-box}
+
+[hidden]{display:none!important}
+
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px;border-radius:2px}
+a{color:var(--gold)} a:hover{color:var(--gold-hi)}
+
+.gatePage{position:relative;z-index:1;width:min(1280px,100%);margin:0 auto;padding:28px 20px 48px}
+
+/* ===== Заголовок ===== */
+.gateBrand{text-align:center;margin-bottom:26px}
+#gate .eyebrow{
+  color:var(--gold);font:700 11px/1 var(--sans);
+  letter-spacing:.34em;text-transform:uppercase;
+}
+.gateBrand h1{
+  margin:14px 0 0;
+  font:400 clamp(34px,5vw,54px)/1.05 var(--serif);
+  letter-spacing:.14em;text-transform:uppercase;
+  background:linear-gradient(180deg,#f6e3b4 0%,var(--gold) 45%,#8a6b3a 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 2px 24px rgba(214,150,60,.18);
+}
+.brandRule{display:flex;align-items:center;gap:14px;justify-content:center;margin:14px auto 12px;width:min(520px,80%)}
+.brandRule i{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--bronze))}
+.brandRule i:last-child{background:linear-gradient(90deg,var(--bronze),transparent)}
+.brandRule b{color:var(--gold);font-size:12px;line-height:1}
+.gateBrand p{margin:0 auto;max-width:52ch;color:var(--muted);font-size:14px}
+
+/* ===== Сцена ===== */
+.stage{display:grid;grid-template-columns:minmax(232px,290px) minmax(300px,1fr) minmax(232px,290px);gap:24px;align-items:start;margin-bottom:26px}
+.stageCenter{order:0}
+.stageLeft{order:0}
+.stageRight{order:0}
+
+.colLabel{
+  display:block;margin:0 0 10px;color:var(--gold);
+  font:700 11px/1 var(--sans);letter-spacing:.26em;text-transform:uppercase;
+}
+
+/* ===== Панель (кованая оправа, компакт) ===== */
+.forged{
+  position:relative;border:1px solid var(--line);border-radius:6px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(217,184,122,.06), transparent 55%),
+    linear-gradient(180deg, rgba(30,24,20,.85), rgba(12,10,10,.92));
+  box-shadow:0 0 0 1px rgba(0,0,0,.6), inset 0 0 0 1px rgba(217,184,122,.07), 0 16px 36px rgba(0,0,0,.5);
+}
+
+/* ===== Портрет-сцена ===== */
+.heroStage{position:relative;text-align:center;overflow:clip;overflow-clip-margin:0}
+.heroGlow{
+  position:absolute;left:50%;top:44%;width:130%;height:120%;
+  transform:translate(-50%,-50%);pointer-events:none;
+  background:radial-gradient(ellipse 50% 44% at 50% 50%, rgba(224,146,58,.27), transparent 70%);
+  animation:emberBreath 5.5s ease-in-out infinite;
+}
+@keyframes emberBreath{0%,100%{opacity:.75}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.heroGlow{animation:none}.embers{display:none}}
+/* угли */
+.embers{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+.embers i{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:#eda054;box-shadow:0 0 9px 2px rgba(232,138,60,.5);opacity:0;animation:emberRise linear infinite}
+@keyframes emberRise{0%{transform:translate(0,0) scale(1);opacity:0}8%{opacity:.85}55%{opacity:.45}100%{transform:translate(34px,-94vh) scale(.35);opacity:0}}
+.embers i:nth-child(1){left:10%;animation-duration:9s}
+.embers i:nth-child(2){left:26%;animation-duration:11s;animation-delay:2.2s;width:3px;height:3px}
+.embers i:nth-child(3){left:43%;animation-duration:8s;animation-delay:4s}
+.embers i:nth-child(4){left:56%;animation-duration:12.5s;animation-delay:1s;width:3px;height:3px}
+.embers i:nth-child(5){left:69%;animation-duration:9.5s;animation-delay:3.4s}
+.embers i:nth-child(6){left:81%;animation-duration:11.5s;animation-delay:5.2s;width:3px;height:3px}
+.embers i:nth-child(7){left:91%;animation-duration:8.5s;animation-delay:.6s}
+.heroFrame{
+  position:relative;display:block;width:min(400px,100%);margin:0 auto;padding:12px;
+  border-radius:8px;
+  background:
+    linear-gradient(160deg,#7a6138 0%,#3a2d1d 30%,#241b12 52%,#5c4a2c 78%,#1c1510 100%);
+  box-shadow:
+    0 0 0 1px #0c0906,
+    inset 0 0 0 1px rgba(242,217,160,.35),
+    0 26px 60px rgba(0,0,0,.65),
+    0 0 90px rgba(216,132,48,.14);
+}
+.heroFrame::before{
+  content:"";position:absolute;inset:8px;pointer-events:none;z-index:2;
+  border:1px solid rgba(242,217,160,.5);border-radius:4px;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.55), inset 0 0 42px rgba(0,0,0,.55);
+}
+.heroFrame img{display:block;width:100%;height:auto;border-radius:3px;background:#060509}
+.fCorner{position:absolute;width:34px;height:34px;z-index:3;pointer-events:none}
+.fCorner.tl{top:-5px;left:-5px}
+.fCorner.tr{top:-5px;right:-5px;transform:scaleX(-1)}
+.fCorner.bl{bottom:-5px;left:-5px;transform:scaleY(-1)}
+.fCorner.br{bottom:-5px;right:-5px;transform:scale(-1)}
+.heroCaption{margin-top:16px}
+.heroCaption strong{
+  display:block;font:400 26px/1.15 var(--serif);letter-spacing:.12em;text-transform:uppercase;color:var(--gold-hi);
+  text-shadow:0 0 22px rgba(224,150,64,.35);
+}
+.heroCaption span{display:block;margin-top:5px;color:var(--muted);font-size:13px;font-style:italic;font-family:var(--serif)}
+
+/* ===== Плитки (общее) ===== */
+.gateGrid{display:grid;gap:9px}
+.gateTile{
+  position:relative;width:100%;text-align:left;cursor:pointer;
+  color:var(--ink);border:1px solid var(--line);border-radius:6px;
+  background:linear-gradient(180deg, rgba(32,25,21,.9), rgba(13,11,11,.95));
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.5);
+  transition:box-shadow .18s ease, filter .18s ease;
+  filter:saturate(.82) brightness(.92);
+}
+.gateTile:hover{filter:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.5), 0 0 18px rgba(224,150,64,.22), inset 0 0 14px rgba(224,150,64,.06)}
+.gateTile.active{
+  filter:none;border-color:#a8834a;
+  box-shadow:
+    inset 0 0 0 1px rgba(242,217,160,.5),
+    inset 0 0 22px rgba(224,150,64,.13),
+    0 0 24px var(--glow);
+}
+.gateTile.active::after{ /* метка выбора — не только цветом */
+  content:"◆";position:absolute;top:-8px;right:-6px;z-index:2;
+  width:17px;height:17px;display:grid;place-items:center;
+  color:#1c130a;background:linear-gradient(180deg,var(--gold-hi),var(--bronze));
+  border-radius:50%;font-size:9px;line-height:1;
+  box-shadow:0 0 0 1px #0c0906, 0 0 10px var(--glow);
+}
+
+/* Классы */
+.classTile{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;padding:7px 9px 7px 7px}
+.classTile img{width:46px;height:46px;display:block;border-radius:4px;border:1px solid rgba(217,184,122,.25)}
+.classTile .tTxt strong{display:block;font:700 13.5px/1.2 var(--serif);letter-spacing:.02em}
+.classTile .tTxt span{display:block;color:var(--muted);font-size:11px;line-height:1.3}
+.classTile .tSigil{color:var(--gold);font-size:15px;opacity:.85}
+
+/* Внешности */
+#gateAvatars{grid-template-columns:repeat(8,1fr)}
+.lookTile{padding:5px}
+.lookTile img{display:block;width:100%;height:auto;border-radius:4px;border:1px solid rgba(217,184,122,.2)}
+
+/* ===== Правая колонка ===== */
+.gateField{display:block;margin:0 0 18px}
+.gateField > .colLabel{margin-bottom:10px}
+#gateName{
+  width:100%;padding:12px 13px;color:var(--ink);border-radius:5px;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(8,7,9,.9), rgba(20,16,13,.85));
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.65), 0 1px 0 rgba(217,184,122,.1);
+  font-family:var(--serif);font-size:16px;letter-spacing:.03em;
+}
+#gateName::placeholder{color:#8f8066;font-style:italic}
+#gateName:focus{border-color:var(--gold);outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.65), 0 0 0 1px rgba(217,184,122,.4), 0 0 16px rgba(224,150,64,.28)}
+#gateName[aria-invalid="true"]{border-color:#8c3a30}
+
+.sidePanel{padding:14px 15px}
+.sidePanel h3{
+  margin:0 0 11px;color:var(--gold);
+  font:700 11px/1 var(--sans);letter-spacing:.26em;text-transform:uppercase;
+}
+.giftRow{display:grid;grid-template-columns:20px 1fr;gap:9px;margin:0 0 11px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.giftRow .gIco{color:var(--gold);font-size:13px;line-height:1.4;text-align:center}
+.giftRow b{color:var(--ink);font-family:var(--serif);letter-spacing:.02em}
+.giftWarn{
+  margin:13px -15px -14px;padding:9px 15px 10px;font-size:11.5px;color:#c9a06a;
+  border-top:1px solid rgba(140,58,48,.4);
+  background:linear-gradient(180deg, rgba(90,30,25,.22), rgba(40,14,12,.3));
+  border-radius:0 0 6px 6px;
+}
+
+/* ===== Ошибка и кнопка ===== */
+.gateError{margin:18px auto 0;max-width:460px;text-align:center;color:var(--err);font-size:13.5px}
+.gateError::before{content:"✕ ";color:#c05545}
+.submitWrap{display:flex;justify-content:center;margin-top:20px}
+.gateSubmit{
+  position:relative;min-width:min(420px,100%);padding:15px 34px;cursor:pointer;
+  color:#1e1206;border-radius:6px;border:1px solid #f0cf8e;
+  font:700 17px/1 var(--serif);letter-spacing:.2em;text-transform:uppercase;
+  background:linear-gradient(180deg,#f2d9a0 0%,var(--gold) 38%,#c07a34 82%,#8a5423 100%);
+  box-shadow:
+    0 0 0 1px #0c0906, 0 0 0 3px rgba(143,116,72,.5),
+    inset 0 1px 0 rgba(255,244,214,.8), inset 0 -10px 18px rgba(90,40,10,.45),
+    0 14px 34px rgba(0,0,0,.55), 0 0 34px rgba(224,150,64,.28);
+  transition:box-shadow .18s ease, filter .18s ease;
+}
+.gateSubmit:hover{filter:brightness(1.07);box-shadow:
+    0 0 0 1px #0c0906, 0 0 0 3px rgba(180,146,90,.6),
+    inset 0 1px 0 rgba(255,244,214,.9), inset 0 -10px 18px rgba(90,40,10,.4),
+    0 14px 34px rgba(0,0,0,.55), 0 0 52px rgba(232,160,70,.5)}
+.gateSubmit:active{transform:translateY(1px)}
+
+/* ===== Адаптив ===== */
+@media (max-width: 980px){
+  .stage{grid-template-columns:1fr;gap:20px}
+  .stageCenter{order:1}
+  .stageRight{order:2}
+  .stageLeft{order:3}
+  #gateClasses{grid-template-columns:1fr 1fr}
+  #gateAvatars{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width: 560px){
+  .gatePage{padding:20px 12px 36px}
+  #gateClasses{grid-template-columns:1fr}
+  #gateAvatars{grid-template-columns:repeat(4,1fr);gap:7px}
+  .gateSubmit{width:100%;min-width:0}
+  .heroFrame{width:100%}
+}
+
+/* --- Карточка героя в шапке --- */
+.playerCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(33,22,41,.9), rgba(13,13,18,.95));
+}
+.playerCard img { width: 44px; height: 44px; border-radius: 6px; display: block; }
+.playerCard strong { display: block; font: 800 16px/1.15 ui-serif, Georgia, serif; }
+.playerCard span { display: block; font-size: 11.5px; color: var(--muted); }
+.playerCard em { display: block; font-size: 10.5px; color: var(--gold); font-style: normal; letter-spacing: .08em; text-transform: uppercase; }
 </style>
 </head>
 <body>
-<div class="page">
+<section class="gate" id="gate" hidden>
+  <div class="embers" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="gatePage">
+  <form id="gateForm" novalidate>
+    <header class="gateBrand">
+      <div class="eyebrow">AI Agents 2026 · Совет Пути</div>
+      <h1>Создание героя</h1>
+      <div class="brandRule" aria-hidden="true"><i></i><b>✦</b><i></i></div>
+      <p>Назови себя, выбери путь и внешность. День регистрации станет первым днём кампании.</p>
+    </header>
+  
+    <div class="stage">
+      <aside class="stageLeft">
+        <span class="colLabel" id="lblClasses">Класс</span>
+        <div class="gateGrid" id="gateClasses" role="group" aria-labelledby="lblClasses"></div>
+      </aside>
+  
+      <div class="stageCenter heroStage">
+        <div class="heroGlow" aria-hidden="true"></div>
+        <div class="heroFrame">
+          <svg class="fCorner tl" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#0c0906" stroke-width="5"/><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#e0c184" stroke-width="2"/><path d="M4 24 Q12 14 24 4" fill="none" stroke="#8a6d42" stroke-width="1.4"/><circle cx="9" cy="9" r="3.2" fill="#e0c184" stroke="#0c0906" stroke-width="1"/></svg>
+          <svg class="fCorner tr" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#0c0906" stroke-width="5"/><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#e0c184" stroke-width="2"/><path d="M4 24 Q12 14 24 4" fill="none" stroke="#8a6d42" stroke-width="1.4"/><circle cx="9" cy="9" r="3.2" fill="#e0c184" stroke="#0c0906" stroke-width="1"/></svg>
+          <svg class="fCorner bl" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#0c0906" stroke-width="5"/><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#e0c184" stroke-width="2"/><path d="M4 24 Q12 14 24 4" fill="none" stroke="#8a6d42" stroke-width="1.4"/><circle cx="9" cy="9" r="3.2" fill="#e0c184" stroke="#0c0906" stroke-width="1"/></svg>
+          <svg class="fCorner br" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#0c0906" stroke-width="5"/><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#e0c184" stroke-width="2"/><path d="M4 24 Q12 14 24 4" fill="none" stroke="#8a6d42" stroke-width="1.4"/><circle cx="9" cy="9" r="3.2" fill="#e0c184" stroke="#0c0906" stroke-width="1"/></svg>
+          <img id="heroBig" alt="" width="400" height="400">
+        </div>
+        <div class="heroCaption">
+          <strong id="heroClassName"></strong>
+          <span id="heroLookName"></span>
+        </div>
+      </div>
+  
+      <aside class="stageRight">
+        <label class="gateField">
+          <span class="colLabel">Имя героя</span>
+          <input id="gateName" type="text" maxlength="24" autocomplete="off" placeholder="Как тебя звать?">
+        </label>
+        <div class="sidePanel forged">
+          <h3>Дар пути</h3>
+          <p class="giftRow"><span class="gIco">☄</span><span><b id="giftBranch"></b> — ×<span id="giftMult"></span> к опыту в этой ветке</span></p>
+          <p class="giftRow"><span class="gIco" id="giftSigil"></span><span><b id="giftAbility"></b> — <span id="giftAbilityDesc"></span>. Раз в день.</span></p>
+          <p class="giftWarn">Класс закрепляется при создании героя — выбор необратим.</p>
+        </div>
+      </aside>
+    </div>
+  
+    <div class="gateField">
+      <span class="colLabel" id="lblLooks">Внешность</span>
+      <div class="gateGrid gateGridAvatars" id="gateAvatars" role="group" aria-labelledby="lblLooks"></div>
+    </div>
+  
+    <p class="gateError" id="gateError" hidden aria-live="assertive">Введи имя героя.</p>
+    <div class="submitWrap">
+      <button class="gateSubmit" type="submit">Начать путь</button>
+    </div>
+  </form>
+  </div>
+</section>
+
+
+<div class="page" id="app" hidden>
   <header class="topbar">
     <div>
       <div class="eyebrow">AI Agents 2026 · Дерево навыков</div>
       <h1>Совет Пути</h1>
       <p>Тёмный зал кампании: каждый день приносит приказ, артефакт и след на карте.</p>
     </div>
+    <div class="playerCard" id="playerCard"></div>
     <div class="topStats">
       <div><b id="level">1</b><span>уровень</span></div>
       <div><b id="xp">0</b><span>XP</span></div>
@@ -675,41 +1093,44 @@ button, select { font: inherit; }
   </main>
 
   <section class="lowerGrid">
-    <aside class="panel classPanel">
-      <h2>Класс персонажа</h2>
-      <div class="classList" id="classes"></div>
-    </aside>
-
-    <section class="panel mapPanel">
+    <section class="panel questPanel">
       <div class="mapHeader">
         <div>
-          <h2>Карта кампании</h2>
-          <p class="small">24 зоны, 168 дней. Текущая зона подсвечена.</p>
+          <h2 id="questPanelTitle">Испытание</h2>
+          <p class="small" id="questPanelMeta">Выбери квест в панели зоны.</p>
         </div>
         <div class="tools">
-          <button class="toolBtn" id="completeZone">Закрыть зону</button>
+          <button class="toolBtn" id="useAbility">Способность</button>
           <button class="toolBtn" id="exportState">Экспорт</button>
           <button class="toolBtn resetDanger" id="resetState">Сброс</button>
         </div>
       </div>
-      <div class="timeline">
-        <h2>Путь зон</h2>
-        <div class="timelineTrack" id="timeline"></div>
-        <div class="legend"><span>пройдено</span><span>сегодня</span><span>впереди</span></div>
+      <div id="questBody"></div>
+
+      <div class="mapCollapse">
+        <button class="miniBtn" id="toggleMap">Показать карту</button>
+        <span class="small" id="coverageLine"></span>
       </div>
-      <div class="map">
-        <div class="visualBoard">
-          <div class="questFocus">
-            <h3>Фокус дня</h3>
-            <p id="focusLine">Сегодня открывается первый слой карты.</p>
-            <p><b id="focusArtifact">Артефакт будет показан здесь.</b></p>
-          </div>
-          <div class="skillRadar">
-            <h3>Силы персонажа</h3>
-            <div id="skillBars"></div>
-          </div>
+      <div id="mapBody" hidden>
+        <div class="timeline">
+          <h2>Путь зон</h2>
+          <div class="timelineTrack" id="timeline"></div>
+          <div class="legend"><span>пройдено</span><span>сегодня</span><span>впереди</span></div>
         </div>
-        <div class="zones" id="zones"></div>
+        <div class="map">
+          <div class="visualBoard">
+            <div class="questFocus">
+              <h3>Фокус дня</h3>
+              <p id="focusLine">Сегодня открывается первый слой карты.</p>
+              <p><b id="focusArtifact">Артефакт будет показан здесь.</b></p>
+            </div>
+            <div class="skillRadar">
+              <h3>Силы персонажа</h3>
+              <div id="skillBars"></div>
+            </div>
+          </div>
+          <div class="zones" id="zones"></div>
+        </div>
       </div>
     </section>
 
@@ -729,6 +1150,8 @@ button, select { font: inherit; }
   </section>
 </div>
 
+<!-- Банк вопросов. Отсутствие файла не ломает приложение — см. hasBank(). -->
+<script src="questions.js"></script>
 <script>
 const classes = [
   ["Математик", "Векторы, вероятности, градиенты", "◇"],
@@ -741,15 +1164,44 @@ const classes = [
   ["Инженер продакшна", "Деплой, наблюдаемость, стоимость", "◈"]
 ];
 const classPalette = [
-  ["#39264b", "#d9b87a", "#8e2527"],
-  ["#182f3d", "#c66d34", "#75a7c7"],
-  ["#2d3324", "#d9b87a", "#68b07a"],
-  ["#3a2440", "#b58add", "#d9b87a"],
-  ["#2d191a", "#d9b87a", "#8e2527"],
-  ["#172d2d", "#75a7c7", "#d9b87a"],
-  ["#1c2038", "#d9b87a", "#8e2527"],
-  ["#2b241d", "#c66d34", "#d9b87a"]
+  ["#2c2140", "#b58add", "#4a3060"],
+  ["#12303a", "#6cc4d4", "#1e5260"],
+  ["#1a2b1c", "#86c07a", "#2f5233"],
+  ["#332612", "#ecc466", "#7a5a20"],
+  ["#331416", "#e0756a", "#7a262b"],
+  ["#302818", "#d8bc85", "#6a5530"],
+  ["#171f36", "#8aa2e0", "#32406e"],
+  ["#33190f", "#e88a4e", "#74381a"]
+
 ];
+// Ветки навыков. Раньше жили внутри renderSkillBars — вынесены наверх,
+// потому что теперь на них же завязана специализация классов.
+const SKILL_BUCKETS = [
+  ["Математика", [0]],
+  ["Python", [1]],
+  ["ML", [2, 3]],
+  ["LLM", [4, 5]],
+  ["RAG", [6, 7]],
+  ["Бизнес", [8, 9, 10]],
+  ["Мультиагенты", [11, 20, 21]],
+  ["Продакшн", [12, 13, 14, 15, 16, 17, 18, 19, 22, 23]]
+];
+// Класс → индекс родной ветки. Порядок классов и веток не совпадает,
+// поэтому связь задана явно, а не по индексу.
+const CLASS_BRANCH = [0, 1, 2, 3, 6, 4, 5, 7];
+const HOME_BRANCH_XP = 1.5;
+
+const ABILITIES = [
+  {name: "Расчёт вероятностей", desc: "убирает по одному неверному варианту в каждом вопросе"},
+  {name: "Автоматизация", desc: "засчитывает один вопрос верным"},
+  {name: "Кросс-валидация", desc: "после проверки даёт перерешать неверные, сохранив верные"},
+  {name: "Уточняющий запрос", desc: "показывает подсказку к первому неотвеченному вопросу"},
+  {name: "Рефлексия", desc: "показывает число верных ответов до отправки"},
+  {name: "Поиск по архиву", desc: "открывает разбор одного вопроса до ответа"},
+  {name: "Делегирование", desc: "исключает один вопрос из подсчёта, порог становится 3 из 4"},
+  {name: "Откат", desc: "+15% к XP за эту попытку"}
+];
+
 const skillBranches = [
   {id:"root", name:"Искра агента", desc:"Старт кампании", icon:"✦", x:50, y:14, zones:[0], deps:[]},
   {id:"math", name:"Линейные руны", desc:"векторы и матрицы", icon:"◇", x:20, y:28, zones:[0], deps:["root"]},
@@ -766,39 +1218,225 @@ const skillBranches = [
   {id:"production", name:"Цитадель продакшна", desc:"UI, deploy, cost", icon:"◈", x:70, y:76, zones:[14,15,16,17,18,19,22,23], deps:["rag","workflow"]}
 ];
 
-function portraitSvg(i, size = 96) {
-  const c = classes[i % classes.length];
-  const p = classPalette[i % classPalette.length];
-  const face = ["#c89b70", "#b98560", "#d1a77c", "#a97055"][i % 4];
-  const hair = ["#1b1210", "#e0c27c", "#4b2b1f", "#d9d9d9"][i % 4];
-  const helm = i === 4 || i === 6 || i === 7;
-  const hood = i === 0 || i === 3 || i === 5;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Портрет: ${c[0]}">
-    <defs>
-      <radialGradient id="bg${i}" cx="50%" cy="36%" r="70%">
-        <stop offset="0" stop-color="${p[0]}"/>
-        <stop offset="1" stop-color="#080a10"/>
-      </radialGradient>
-      <linearGradient id="robe${i}" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="${p[2]}"/>
-        <stop offset="1" stop-color="#120b08"/>
-      </linearGradient>
-    </defs>
-    <rect width="96" height="96" fill="url(#bg${i})"/>
-    <path d="M15 90 Q23 62 48 62 Q73 62 81 90 Z" fill="url(#robe${i})" stroke="${p[1]}" stroke-width="1.2"/>
-    ${hood ? `<path d="M23 54 Q25 18 48 12 Q71 18 73 54 Q65 35 48 33 Q31 35 23 54 Z" fill="#100b12" stroke="${p[1]}" stroke-width="1.2"/>` : ""}
-    ${helm ? `<path d="M24 40 Q30 15 48 13 Q66 15 72 40 L66 31 L60 39 L48 27 L36 39 L30 31 Z" fill="#1d2028" stroke="${p[1]}" stroke-width="1.4"/>` : ""}
-    <ellipse cx="48" cy="43" rx="18" ry="22" fill="${face}" stroke="#3c2118" stroke-width="1"/>
-    ${!hood && !helm ? `<path d="M29 37 Q33 17 49 18 Q67 20 68 38 Q58 29 48 31 Q38 29 29 37 Z" fill="${hair}"/>` : ""}
-    <path d="M37 43 L43 43" stroke="#190e0b" stroke-width="2" stroke-linecap="round"/>
-    <path d="M53 43 L59 43" stroke="#190e0b" stroke-width="2" stroke-linecap="round"/>
-    <path d="M44 54 Q48 57 52 54" fill="none" stroke="#4a2117" stroke-width="1.4" stroke-linecap="round"/>
-    <path d="M48 66 L58 86 L48 80 L38 86 Z" fill="#0a0d12" stroke="${p[1]}" stroke-width="1"/>
-    <circle cx="48" cy="72" r="3.5" fill="${p[1]}"/>
-    <text x="48" y="89" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="${p[1]}">${c[2]}</text>
-  </svg>`;
+const METAL='#8f7448', METAL_HI='#d9bd85';
+
+// Восемь внешностей: у каждой собственная функция отрисовки, а не перекраска.
+// draw(c) получает цвета: skin/hair — от внешности, cloak/acc/bg — от класса.
+const looks = [
+{label:'Рогатый вождь',note:'рогатый шлем, тяжёлая челюсть, боевая раскраска',
+ tone:{skin:'#c99069',skin2:'#9c6a49',hair:'#2e2018',hair2:'#1c1310'},
+ draw:c=>`
+  <path d="M6 96 Q10 70 26 64 L70 64 Q86 70 90 96 Z" fill="url(#ck)"/>
+  <path d="M6 96 Q9 72 24 65 L34 62 Q26 78 26 96 Z" fill="#141018" stroke="${METAL}" stroke-width="1"/>
+  <path d="M90 96 Q87 72 72 65 L62 62 Q70 78 70 96 Z" fill="#141018" stroke="${METAL}" stroke-width="1"/>
+  <rect x="42" y="50" width="12" height="14" fill="${c.skin2}"/>
+  <path d="M33 28 Q33 16 48 15 Q63 16 63 28 L62 42 Q61 52 48 57 Q35 52 34 42 Z" fill="${c.skin}"/>
+  <path d="M37 47 Q42 54 48 54 Q54 54 59 47 L58 51 Q54 56 48 56 Q42 56 38 51 Z" fill="${c.hair}" opacity=".9"/>
+  <path d="M30 33 Q28 10 48 9 Q68 10 66 33 Q59 24 48 24 Q37 24 30 33 Z" fill="#39404d" stroke="#171a21" stroke-width="1"/>
+  <rect x="45.4" y="24" width="5.2" height="16" rx="1.5" fill="#39404d" stroke="#171a21" stroke-width="1"/>
+  <path d="M36 30 Q22 33 14 27 Q7 21 8 10 Q13 19 22 22 Q30 25 37 23 Z" fill="#ddd2b8" stroke="#6a5638" stroke-width="1"/>
+  <path d="M60 30 Q74 33 82 27 Q89 21 88 10 Q83 19 74 22 Q66 25 59 23 Z" fill="#ddd2b8" stroke="#6a5638" stroke-width="1"/>
+  <path d="M34 34 Q40 31 45 34 L45 38 Q40 35 35 38 Z" fill="#100c12"/>
+  <path d="M51 34 Q56 31 62 34 L61 38 Q56 35 51 38 Z" fill="#100c12"/>
+  <circle cx="40" cy="35.5" r="1.4" fill="${c.acc}"/><circle cx="56" cy="35.5" r="1.4" fill="${c.acc}"/>
+  <path d="M53 41 L56 47 M56.5 40.5 L59.5 46.5" stroke="${c.acc}" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>`},
+
+{label:'Тень в капюшоне',note:'глухой капюшон, лицо во тьме, светящиеся глаза',
+ tone:{skin:'#b98a66',skin2:'#8a6248',hair:'#1c1310',hair2:'#120c08'},
+ draw:c=>`
+  <path d="M22 96 Q26 72 38 66 L58 66 Q70 72 74 96 Z" fill="url(#ck)"/>
+  <path d="M40 66 L44 80 M56 66 L52 80" stroke="#060407" stroke-width="1.2" opacity=".55"/>
+  <path d="M50 6 Q28 10 25 38 Q23 56 35 63 L61 63 Q72 56 71 36 Q69 11 50 6 Z" fill="url(#ck)" stroke="#060407" stroke-width="1"/>
+  <path d="M50 6 Q30 12 28 36 Q27 52 37 60 Q31 50 32 36 Q34 14 50 6 Z" fill="${c.acc}" opacity=".16"/>
+  <path d="M36 32 Q35 52 48 58 Q60 52 60 32 Q55 24 48 24 Q40 24 36 32 Z" fill="#070509"/>
+  <ellipse cx="48" cy="52.5" rx="3.2" ry="2.2" fill="${c.skin2}" opacity=".5"/>
+  <path d="M47 45.5 L49 45.5 L48 47.5 Z" fill="${c.skin2}" opacity=".35"/>
+  <circle cx="42" cy="38" r="3.8" fill="${c.acc}" opacity=".2"/><circle cx="55" cy="38" r="3.8" fill="${c.acc}" opacity=".2"/>
+  <circle cx="42" cy="38" r="1.5" fill="${c.acc}"/><circle cx="55" cy="38" r="1.5" fill="${c.acc}"/>`},
+
+{label:'Лысый ветеран',note:'бритая голова, шрам через глаз, косматая седая борода',
+ tone:{skin:'#d9a87d',skin2:'#a97b57',hair:'#b9bdbf',hair2:'#7c8184'},
+ draw:c=>`
+  <path d="M8 96 Q14 70 30 65 L66 65 Q82 70 88 96 Z" fill="url(#ck)"/>
+  <path d="M8 96 Q13 72 28 66 Q24 71 22 79 Q34 73 48 73 Q62 73 74 79 Q72 71 68 66 Q83 72 88 96 Z" fill="#241a14" opacity=".95"/>
+  <rect x="41" y="50" width="14" height="12" fill="${c.skin2}"/>
+  <ellipse cx="48" cy="34" rx="16.5" ry="18" fill="${c.skin}"/>
+  <ellipse cx="42" cy="21" rx="7" ry="4" fill="#fff" opacity=".13"/>
+  <path d="M43 17 L40 30 L38 41" stroke="#8a3a3d" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M35 32.5 L44 31.5 M52 31.5 L61 32.5" stroke="${c.hair2}" stroke-width="3" stroke-linecap="round"/>
+  <path d="M37 37 L43 37 M53 37 L59 37" stroke="#181008" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M31 40 Q28 64 38 76 Q42 84 48 84 Q54 84 58 76 Q68 64 65 40 Q58 50 48 50 Q38 50 31 40 Z" fill="${c.hair}"/>
+  <path d="M39 49 Q48 56 57 49" stroke="${c.hair2}" stroke-width="2" fill="none"/>
+  <path d="M44 58 L44 74 M52 58 L52 74" stroke="${c.hair2}" stroke-width="1.2" opacity=".7"/>
+  <rect x="44" y="74" width="8" height="4" rx="1.5" fill="${METAL}" stroke="${METAL_HI}" stroke-width=".8"/>`},
+
+{label:'Дева бури',note:'полуоборот, медные волосы на одно плечо, обруч с камнем',
+ tone:{skin:'#e6ba92',skin2:'#b98a63',hair:'#a5522f',hair2:'#7c3a20'},
+ draw:c=>`
+  <path d="M24 96 Q28 74 40 68 L60 68 Q72 72 74 96 Z" fill="url(#ck)"/>
+  <path d="M60 68 Q70 71 74 80 L60 80 Z" fill="${c.acc}" opacity=".22"/>
+  <path d="M56 16 Q73 24 74 44 Q76 64 68 82 Q64 90 62 96 L46 96 Q55 76 54 58 Q53 42 50 32 Z" fill="${c.hair}"/>
+  <path d="M60 40 Q62 60 57 78" stroke="${c.hair2}" stroke-width="1.6" fill="none" opacity=".7"/>
+  <rect x="41" y="50" width="11" height="14" fill="${c.skin2}"/>
+  <path d="M32 30 Q33 16 46 15 Q60 16 60 31 L59 42 Q57 52 46 56 Q35 52 33 42 Z" fill="${c.skin}"/>
+  <path d="M35 36 Q38 34.5 41 36 M49 36 Q52 34.5 55 36" stroke="#241209" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <circle cx="38.5" cy="37" r="1.1" fill="#241209"/><circle cx="52" cy="37" r="1.1" fill="#241209"/>
+  <path d="M34 33 Q38 31 42 32 M48 32 Q52 31 56 33" stroke="${c.hair2}" stroke-width="1.5" fill="none"/>
+  <path d="M45 38 L44 44 L47 45" stroke="#8a5a3c" stroke-width="1.1" fill="none"/>
+  <path d="M41 50 Q45 52.5 50 50" stroke="#7c3f33" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M31 30 Q32 13 46 13 Q62 13 63 32 Q60 22 50 20 Q46 27 42 22 Q35 21 31 30 Z" fill="${c.hair}"/>
+  <path d="M33 27 Q46 23 59 26" stroke="${METAL_HI}" stroke-width="1.4" fill="none"/>
+  <path d="M45 22.5 L47.2 24.8 L45 27.1 L42.8 24.8 Z" fill="${c.acc}"/>
+  <circle cx="34" cy="46" r="2.2" fill="none" stroke="${METAL_HI}" stroke-width="1.1"/>`},
+
+{label:'Механик в гогглах',note:'гогглы на глазах, респиратор, ёжик волос, клёпаный ворот',
+ tone:{skin:'#b57a52',skin2:'#8a5a3a',hair:'#17141c',hair2:'#0d0b10'},
+ draw:c=>`
+  <path d="M14 96 Q18 72 32 66 L64 66 Q78 72 82 96 Z" fill="url(#ck)"/>
+  <path d="M26 78 L70 78 L70 85 L26 85 Z" fill="#161114" stroke="${METAL}" stroke-width="1"/>
+  <circle cx="33" cy="81.5" r="1.1" fill="${METAL_HI}"/><circle cx="48" cy="81.5" r="1.1" fill="${METAL_HI}"/><circle cx="63" cy="81.5" r="1.1" fill="${METAL_HI}"/>
+  <rect x="42" y="52" width="12" height="14" fill="${c.skin2}"/>
+  <path d="M33 30 Q33 18 48 17 Q63 18 63 30 L62 42 Q60 53 48 56 Q36 53 34 42 Z" fill="${c.skin}"/>
+  <path d="M32 26 L36 13 L40 22 L45 9 L50 20 L55 11 L60 22 L64 26 Q57 18 48 18 Q39 18 32 26 Z" fill="${c.hair}"/>
+  <path d="M31 36 L34 36 M62 36 L65 36" stroke="#241d18" stroke-width="3.4"/>
+  <circle cx="40" cy="37" r="7" fill="#141a1c" stroke="${METAL}" stroke-width="1.7"/>
+  <circle cx="56" cy="37" r="7" fill="#141a1c" stroke="${METAL}" stroke-width="1.7"/>
+  <rect x="45" y="35.2" width="6" height="3.6" rx="1.5" fill="${METAL}"/>
+  <circle cx="38" cy="35" r="2" fill="${c.acc}" opacity=".9"/><circle cx="54" cy="35" r="2" fill="${c.acc}" opacity=".9"/>
+  <path d="M36 46 Q36 60 48 62 Q60 60 60 46 Q54 51 48 51 Q42 51 36 46 Z" fill="#3d352c" stroke="#191410" stroke-width="1"/>
+  <path d="M43 53 L43 58 M48 54 L48 59 M53 53 L53 58" stroke="#191410" stroke-width="1.6"/>
+  <circle cx="36.5" cy="52" r="3" fill="#2a241e" stroke="${METAL}" stroke-width="1"/><circle cx="59.5" cy="52" r="3" fill="#2a241e" stroke="${METAL}" stroke-width="1"/>`},
+
+{label:'Одноглазый корсар',note:'узел волос на макушке, повязка на глазу, серьга-кольцо',
+ tone:{skin:'#8d5a3f',skin2:'#67402c',hair:'#241a12',hair2:'#17100b'},
+ draw:c=>`
+  <path d="M12 96 Q18 72 34 66 L62 66 Q78 72 84 96 Z" fill="url(#ck)"/>
+  <path d="M34 66 L66 92 L59 96 L30 73 Z" fill="#2a1e14" stroke="#0f0b08" stroke-width="1"/>
+  <g transform="rotate(-4 48 40)">
+    <rect x="42" y="52" width="12" height="13" fill="${c.skin2}"/>
+    <path d="M33 30 Q33 17 48 16 Q63 17 63 30 L62 43 Q60 53 48 57 Q36 53 34 43 Z" fill="${c.skin}"/>
+    <path d="M33 28 Q36 20 48 19 Q60 20 63 28 Q60 24 48 23 Q36 24 33 28 Z" fill="${c.hair}" opacity=".6"/>
+    <circle cx="50" cy="10" r="6" fill="${c.hair}"/>
+    <path d="M45.5 13 L54.5 13" stroke="${METAL_HI}" stroke-width="1.5"/>
+    <path d="M54 7 Q60 5 62 11" stroke="${c.hair}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M36 31 Q41 29 45 31 L45 41 Q41 44 37 41 Z" fill="#15100d" stroke="#000" stroke-width=".6"/>
+    <path d="M36 33 L30 30 M45 32 L61 26" stroke="#15100d" stroke-width="1.6"/>
+    <path d="M52 35.5 L58 35.5" stroke="#1c1208" stroke-width="1.9" stroke-linecap="round"/>
+    <path d="M51 31.5 Q55 29.5 59 31.5" stroke="${c.hair}" stroke-width="1.7" fill="none"/>
+    <path d="M42 49 Q46 52 52 50 L55.5 46.5" stroke="#5f3328" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="62.5" cy="45" r="3.1" fill="none" stroke="${METAL_HI}" stroke-width="1.4"/>
+  </g>`},
+
+{label:'Страж в маске',note:'боевая полумаска, латный ворот, руна на лбу, зачёс назад',
+ tone:{skin:'#caa27a',skin2:'#9a7654',hair:'#3b2c1e',hair2:'#281d13'},
+ draw:c=>`
+  <path d="M14 96 Q18 74 32 68 L64 68 Q78 74 82 96 Z" fill="url(#ck)"/>
+  <path d="M28 96 Q28 76 34 68 L62 68 Q68 76 68 96 Z" fill="#1a151c" stroke="${METAL}" stroke-width="1"/>
+  <path d="M29 79 L67 79 M30 88 L66 88" stroke="${METAL}" stroke-width="1"/>
+  <circle cx="34" cy="73.5" r="1.1" fill="${METAL_HI}"/><circle cx="62" cy="73.5" r="1.1" fill="${METAL_HI}"/>
+  <path d="M34 30 Q34 17 48 16 Q62 17 62 30 L61 40 Q60 47 48 49 Q36 47 35 40 Z" fill="${c.skin}"/>
+  <path d="M33 27 Q35 15 48 14 Q61 15 63 27 Q59 20 48 20 Q37 20 33 27 Z" fill="${c.hair}"/>
+  <path d="M63 27 Q66 34 64 44" stroke="${c.hair}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M37 34 L43 34 M53 34 L59 34" stroke="#1a120c" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M36 31 L43 30 M53 30 L60 31" stroke="${c.hair2}" stroke-width="1.6"/>
+  <path d="M44.5 26 L44.5 29.5 M48 24.5 L48 30 M51.5 26 L51.5 29.5" stroke="${c.acc}" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M35 39 Q35 55 48 59 Q61 55 61 39 Q55 44 48 44 Q41 44 35 39 Z" fill="#454152" stroke="#16141b" stroke-width="1"/>
+  <path d="M35 39 Q41 44 48 44 Q55 44 61 39" stroke="${c.acc}" stroke-width="1" opacity=".55" fill="none"/>
+  <path d="M48 44 L48 58" stroke="#16141b" stroke-width="1.2"/>
+  <circle cx="43" cy="51" r="1" fill="#16141b"/><circle cx="53" cy="51" r="1" fill="#16141b"/>
+  <path d="M35 39 L31 36.5 M61 39 L65 36.5" stroke="${METAL}" stroke-width="1.4"/>`},
+
+{label:'Седой мудрец',note:'старец: высокий лоб, длинные белые пряди, монокль, узкая борода',
+ tone:{skin:'#e3c49f',skin2:'#b3946f',hair:'#e6e1d6',hair2:'#c2bcae'},
+ draw:c=>`
+  <path d="M26 96 Q30 76 40 70 L56 70 Q68 76 70 96 Z" fill="url(#ck)"/>
+  <g transform="rotate(3 48 42)">
+    <rect x="43" y="52" width="10" height="14" fill="${c.skin2}"/>
+    <path d="M34 32 Q34 18 48 17 Q62 18 62 32 L61 44 Q59 54 48 57 Q37 54 35 44 Z" fill="${c.skin}"/>
+    <path d="M34 31 Q33 19 42 17 Q36 24 37 34 Z" fill="${c.hair}"/>
+    <path d="M62 31 Q63 19 54 17 Q60 24 59 34 Z" fill="${c.hair}"/>
+    <path d="M41 27 Q48 25 55 27" stroke="${c.skin2}" stroke-width="1" fill="none" opacity=".85"/>
+    <path d="M38 33 L44 32.5 M52 32.5 L58 33" stroke="${c.hair2}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M39 37.5 L43.5 37.5 M52.5 37.5 L57 37.5" stroke="#3a2c1e" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="55" cy="37.5" r="4.8" fill="none" stroke="${METAL_HI}" stroke-width="1.6"/>
+    <path d="M59 41 Q64 49 60 58" stroke="${METAL_HI}" stroke-width=".9" fill="none"/>
+    <path d="M42 46 Q40 66 44 82 Q46 90 48 92 Q50 90 52 82 Q56 66 54 46 Q51 50 48 50 Q45 50 42 46 Z" fill="${c.hair}"/>
+    <path d="M43 47 Q48 51 53 47" stroke="${c.hair2}" stroke-width="1.3" fill="none"/>
+    <path d="M48 56 L48 84" stroke="${c.hair2}" stroke-width="1" opacity=".7"/>
+  </g>
+  <path d="M36 20 Q29 34 30 56 Q30 76 34 90 L42 90 Q37 70 38 46 Z" fill="${c.hair}"/>
+  <path d="M60 20 Q67 34 66 56 Q66 76 62 90 L54 90 Q59 70 58 46 Z" fill="${c.hair}"/>
+  <path d="M34 40 Q33 62 36 82 M62 40 Q63 62 60 82" stroke="${c.hair2}" stroke-width="1.1" fill="none" opacity=".8"/>`},
+];
+
+// Снаряжение — по одному набору на класс: класс даёт экипировку, внешность фигуру.
+const GEAR = [
+ c=>`<path d="M30 78 Q48 70 66 78" fill="none" stroke="${c.acc}" stroke-width="1" opacity=".6"/>
+  <path d="M48 66 L51.5 70 L48 74 L44.5 70 Z" fill="none" stroke="${c.acc}" stroke-width="1.5"/>
+  <path d="M48 68.2 L49.6 70 L48 71.8 L46.4 70 Z" fill="${c.acc}"/>
+  <path d="M31 69 L33 71.2 L31 73.4 L29 71.2 Z" fill="${c.acc}" opacity=".8"/>
+  <path d="M65 69 L67 71.2 L65 73.4 L63 71.2 Z" fill="${c.acc}" opacity=".8"/>`,
+ c=>`<path d="M31 66 L65 84" stroke="#241a12" stroke-width="4" opacity=".9"/>
+  <circle cx="48" cy="74" r="5" fill="#101a1e" stroke="${c.acc}" stroke-width="1.5"/>
+  <circle cx="48" cy="74" r="1.6" fill="${c.acc}"/>
+  <path d="M48 67.5 L48 65.5 M48 80.5 L48 82.5 M41.5 74 L39.5 74 M54.5 74 L56.5 74 M43.4 69.4 L42 68 M52.6 78.6 L54 80 M43.4 78.6 L42 80 M52.6 69.4 L54 68" stroke="${c.acc}" stroke-width="1.5"/>`,
+ c=>`<path d="M34 67 L62 82" stroke="#2a1e12" stroke-width="4.5"/>
+  <path d="M63 61 L70 52 M66 63 L73 55 M68 66 L75 59" stroke="#8a6d42" stroke-width="1.6"/>
+  <path d="M70 52 L68 49 M70 52 L73 51 M73 55 L71 52 M73 55 L76 54 M75 59 L73 56 M75 59 L78 58" stroke="${METAL_HI}" stroke-width="1.3"/>
+  <path d="M40 71 L42 76 L44 71 M46 72 L48 77 L50 72 M52 71 L54 76 L56 71" fill="none" stroke="#ddd2b8" stroke-width="1.3"/>`,
+ c=>`<path d="M34 70 Q48 64 62 70" stroke="${c.acc}" stroke-width="1.2" fill="none" opacity=".7"/>
+  <path d="M36 75 L44 75 M52 75 L60 75" stroke="${c.acc}" stroke-width="1" opacity=".5"/>
+  <path d="M48 66 L49.6 70.4 L54 72 L49.6 73.6 L48 78 L46.4 73.6 L42 72 L46.4 70.4 Z" fill="${c.acc}"/>`,
+ c=>`<path d="M12 78 Q14 64 30 61 L34 66 Q22 68 20 80 Z" fill="#2b2530" stroke="${METAL}" stroke-width="1.2"/>
+  <path d="M84 78 Q82 64 66 61 L62 66 Q74 68 76 80 Z" fill="#2b2530" stroke="${METAL}" stroke-width="1.2"/>
+  <path d="M48 66 Q53 66 55 68 Q55 76 48 80 Q41 76 41 68 Q43 66 48 66 Z" fill="#1c161a" stroke="${c.acc}" stroke-width="1.4"/>
+  <path d="M48 69 L48 77 M44.5 72.5 L51.5 72.5" stroke="${c.acc}" stroke-width="1.1"/>`,
+ c=>`<path d="M32 66 L64 80" stroke="#241a12" stroke-width="3.5"/>
+  <g transform="rotate(8 48 73)"><rect x="40" y="70" width="16" height="6" rx="2.6" fill="#cbb583" stroke="#6a5432" stroke-width="1"/><path d="M43 70 L43 76 M53 70 L53 76" stroke="#6a5432" stroke-width=".9"/></g>
+  <circle cx="59" cy="82" r="2.8" fill="${c.acc}" stroke="#2c2010" stroke-width=".8"/>`,
+ c=>`<rect x="24" y="63" width="13" height="4.5" rx="1.5" fill="${METAL}" stroke="${METAL_HI}" stroke-width=".8"/>
+  <rect x="59" y="63" width="13" height="4.5" rx="1.5" fill="${METAL}" stroke="${METAL_HI}" stroke-width=".8"/>
+  <path d="M26 68 L26 73 M30 68 L30 74 M34 68 L34 73 M61 68 L61 73 M65 68 L65 74 M69 68 L69 73" stroke="${METAL_HI}" stroke-width="1.1"/>
+  <path d="M43 78 L43 70 L45.5 70 L45.5 72 L47 72 L47 70 L49 70 L49 72 L50.5 72 L50.5 70 L53 70 L53 78 Z" fill="${c.acc}"/>`,
+ c=>`<path d="M26 64 Q20 74 24 88 M70 64 Q76 74 72 88" stroke="${c.acc}" stroke-width="1.6" fill="none" opacity=".8"/>
+  <path d="M30 78 L66 78 L66 85 L30 85 Z" fill="#1c1512" stroke="${METAL}" stroke-width="1"/>
+  <circle cx="34" cy="81.5" r="1.1" fill="${METAL_HI}"/><circle cx="48" cy="81.5" r="1.1" fill="${METAL_HI}"/><circle cx="62" cy="81.5" r="1.1" fill="${METAL_HI}"/>
+  <path d="M48 66 L52.5 68.5 L52.5 73.5 L48 76 L43.5 73.5 L43.5 68.5 Z" fill="none" stroke="${c.acc}" stroke-width="1.5"/><circle cx="48" cy="71" r="1.5" fill="${c.acc}"/>`,
+
+];
+
+// cls задаёт палитру и снаряжение, avatar — фигуру. Порядок аргументов
+// сохранён от прежней версии: renderDetail зовёт функцию с одним аргументом.
+function portraitSvg(cls, avatar = cls) {
+  const cl = classes[cls % classes.length];
+  const p = classPalette[cls % classPalette.length];
+  const L = looks[avatar % looks.length];
+  const P = {bg: p[0], acc: p[1], cloak: p[2]};
+  const c = Object.assign({}, L.tone, {cloak: P.cloak, acc: P.acc, bg: P.bg});
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Портрет: ${L.label} — ${cl[0]}">
+<defs>
+<radialGradient id="bg" cx="50%" cy="32%" r="72%"><stop offset="0" stop-color="${P.bg}"/><stop offset="1" stop-color="#060509"/></radialGradient>
+<linearGradient id="ck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.cloak}"/><stop offset="1" stop-color="#0b0908"/></linearGradient>
+<radialGradient id="hl" cx="50%" cy="40%" r="48%"><stop offset="0" stop-color="${P.acc}" stop-opacity=".3"/><stop offset="1" stop-color="${P.acc}" stop-opacity="0"/></radialGradient>
+<linearGradient id="sh" x1="0" y1="1" x2=".55" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".62"/><stop offset=".55" stop-color="#000" stop-opacity="0"/></linearGradient>
+<radialGradient id="rim" cx="74%" cy="14%" r="64%"><stop offset="0" stop-color="#ffb25c" stop-opacity=".3"/><stop offset="1" stop-color="#ffb25c" stop-opacity="0"/></radialGradient>
+<radialGradient id="vg" cx="50%" cy="42%" r="66%"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/></radialGradient>
+<filter id="gr"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 .9 0 0 0 0 .75 0 0 0 .6 0"/></filter>
+</defs>
+<rect width="96" height="96" fill="url(#bg)"/>
+<rect width="96" height="96" fill="url(#hl)"/>
+<ellipse cx="48" cy="98" rx="40" ry="12" fill="#000" opacity=".5"/>
+${L.draw(c)}
+${GEAR[cls % GEAR.length](c)}
+<rect width="96" height="96" fill="url(#sh)"/>
+<rect width="96" height="96" fill="url(#rim)"/>
+<rect width="96" height="96" fill="url(#vg)"/>
+<rect width="96" height="96" filter="url(#gr)" opacity=".055"/>
+<rect x="1.5" y="1.5" width="93" height="93" fill="none" stroke="#000" stroke-opacity=".6" stroke-width="3"/>
+</svg>`;;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
+
 
 const zones = [
   {t:"Врата линейной алгебры", d:"Векторы, матрицы, трансформации, собственные векторы, градиенты, Байес.", days:"1-7", xp:700, seal:"◇", artifact:"Объяснить агентный цикл через векторы, неопределённость и оптимизацию.", q:["3Blue1Brown видео 1-2 + заметка про вектор и матрицу", "Размерности матриц и умножение", "Трансформации в 2D", "Собственные векторы без формализма", "Градиентный спуск", "Пример Байеса", "Контроль Бездны-1"]},
@@ -828,7 +1466,6 @@ const zones = [
 ];
 
 const course = {
-  startDate: "2026-05-29",
   totalDays: 168
 };
 const dayResources = {
@@ -863,9 +1500,55 @@ const dayResources = {
     ["RPG-карта — текущий прогресс", "/"]
   ]
 };
-const state = JSON.parse(localStorage.getItem("aiAgentsRpgState") || '{"class":0,"done":{}}');
-function currentCourseDay() {
-  const start = new Date(`${course.startDate}T00:00:00`);
+const KEY_STATE = "aiAgentsRpgState2";
+const KEY_SELECTED = "aiAgentsRpgSelected2";
+// Схема v1 несовместима (нет героя и даты старта) — выбрасываем её один раз.
+// removeItem по отсутствующему ключу это no-op, поэтому вызов идемпотентен.
+localStorage.removeItem("aiAgentsRpgState");
+localStorage.removeItem("aiAgentsRpgSelected");
+
+// Фабрика, а не общий литерал: иначе state.done стал бы алиасом на поле
+// дефолта и отметки квестов протекли бы в него.
+function defaultState() {
+  return {name: "", class: 0, avatar: 0, startDate: "", done: {}, abilityUsedOn: "", mapOpen: false};
+}
+function loadState() {
+  let s;
+  try {
+    s = Object.assign(defaultState(), JSON.parse(localStorage.getItem(KEY_STATE) || "{}"));
+  } catch (e) {
+    // Битый JSON не должен ронять скрипт целиком: иначе не отрисуется даже экран создания.
+    s = defaultState();
+  }
+  // Записи прогресса раньше были просто true. Нормализуем в {c, n}, считая
+  // старую отметку полным прохождением, чтобы прогресс не обнулился.
+  if (s.done && typeof s.done === "object") {
+    for (const key of Object.keys(s.done)) {
+      const v = s.done[key];
+      if (v === true) s.done[key] = {c: 1, n: 1};
+      else if (!v || typeof v !== "object" || !Number.isFinite(v.c) || !Number.isFinite(v.n)) delete s.done[key];
+    }
+  } else {
+    s.done = {};
+  }
+  return s;
+}
+const state = loadState();
+
+// Локальная дата, не toISOString(): тот отдаёт UTC и вечером сдвигает день на единицу.
+function localDateStr(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function isRegistered() {
+  return !!state.startDate;
+}
+// Считаем по месту вызова, а не один раз при загрузке: обработчики ниже
+// назначаются единожды и иначе навсегда захватили бы день регистрации.
+// Имена courseZone/courseQuest, а не todayZone/todayQuest — последние заняты
+// глобалами, которые создают id="todayZone" и id="todayQuest" в разметке.
+function courseDay() {
+  if (!state.startDate) return 1;
+  const start = new Date(`${state.startDate}T00:00:00`);
   const now = new Date();
   const diff = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - start) / 86400000) + 1;
   return Math.max(1, Math.min(course.totalDays, diff));
@@ -876,25 +1559,89 @@ function zoneIndexForDay(day) {
 function questIndexForDay(day) {
   return Math.max(0, Math.min(6, (day - 1) % 7));
 }
-const todayDay = currentCourseDay();
-const todayZone = zoneIndexForDay(todayDay);
-const todayQuest = questIndexForDay(todayDay);
-let selected = Number(localStorage.getItem("aiAgentsRpgSelected") || todayZone);
+function courseZone() {
+  return zoneIndexForDay(courseDay());
+}
+function courseQuest() {
+  return questIndexForDay(courseDay());
+}
+let selected = 0;
+function loadSelected() {
+  const raw = localStorage.getItem(KEY_SELECTED);
+  selected = raw === null ? courseZone() : Number(raw);
+  if (!Number.isInteger(selected) || selected < 0 || selected >= zones.length) selected = courseZone();
+}
 
 function save() {
-  localStorage.setItem("aiAgentsRpgState", JSON.stringify(state));
-  localStorage.setItem("aiAgentsRpgSelected", String(selected));
+  try {
+    localStorage.setItem(KEY_STATE, JSON.stringify(state));
+    localStorage.setItem(KEY_SELECTED, String(selected));
+  } catch (e) {
+    // Приватный режим: setItem бросает QuotaExceededError. Прогресс не сохранится,
+    // но render() ниже обязан отработать, иначе UI застынет на полу-действии.
+  }
 }
 function questKey(z, q) { return `${z}:${q}`; }
-function isDone(z, q) { return !!state.done[questKey(z, q)]; }
+function record(z, q) { return state.done[questKey(z, q)] || null; }
+function isDone(z, q) { return !!record(z, q); }
 function zoneDone(z) { return zones[z].q.every((_, i) => isDone(z, i)); }
+
+// Банк вопросов подключается отдельным файлом и может отсутствовать —
+// тогда приложение работает как раньше, на чекбоксах.
+function bankQuiz(z, q) {
+  return typeof QUESTIONS !== "undefined" ? QUESTIONS[questKey(z, q)] || null : null;
+}
+function bankCriteria(z, q) {
+  return typeof QUEST_CRITERIA !== "undefined" ? QUEST_CRITERIA[questKey(z, q)] || null : null;
+}
+// "quiz" | "criteria" | "todo" — тип квеста выводится из данных, не хранится.
+function questKind(z, q) {
+  if (bankQuiz(z, q)) return "quiz";
+  if (bankCriteria(z, q)) return "criteria";
+  return "todo";
+}
+
+const PASS_RATIO = 0.6;              // порог 3 из 5
+function xpFactor(c, n) {
+  if (!n) return 1;
+  const r = c / n;
+  if (r >= 1) return 1;
+  if (r >= 0.8) return 0.85;
+  if (r >= PASS_RATIO) return 0.7;
+  return 0;
+}
+function homeBranch() { return SKILL_BUCKETS[CLASS_BRANCH[state.class % CLASS_BRANCH.length]]; }
+function isHomeZone(zi) {
+  const b = homeBranch();
+  return !!b && b[1].includes(zi);
+}
+function classMultiplier(zi) { return isHomeZone(zi) ? HOME_BRANCH_XP : 1; }
+function baseQuestXp(zi) { return Math.round(zones[zi].xp / zones[zi].q.length); }
+function questXp(zi, qi) {
+  const r = record(zi, qi);
+  if (!r) return 0;
+  return Math.round(baseQuestXp(zi) * xpFactor(r.c, r.n) * classMultiplier(zi));
+}
 function totals() {
   let done = 0, xp = 0;
   zones.forEach((z, zi) => z.q.forEach((_, qi) => {
-    if (isDone(zi, qi)) { done++; xp += Math.round(z.xp / z.q.length); }
+    if (!record(zi, qi)) return;
+    done++;
+    xp += questXp(zi, qi);
   }));
   return {done, xp};
 }
+// Лучший результат побеждает: XP пересчитывается из state целиком, поэтому
+// доначисление разницы происходит само собой, без отдельного учёта.
+function saveResult(zi, qi, c, n) {
+  const key = questKey(zi, qi);
+  const prev = state.done[key];
+  if (prev && prev.c / prev.n >= c / n) return false;
+  state.done[key] = {c, n};
+  return true;
+}
+function abilityReady() { return state.abilityUsedOn !== localDateStr(); }
+function ability() { return ABILITIES[state.class % ABILITIES.length]; }
 function rank(level) {
   if (level >= 20) return "Архонт";
   if (level >= 15) return "Страж";
@@ -914,42 +1661,39 @@ function renderStats() {
   document.getElementById("xpHint").textContent = `До следующего уровня: ${500 - into} XP`;
 }
 function renderToday() {
-  const z = zones[todayZone];
-  const q = z.q[todayQuest];
-  const links = dayResources[todayDay] || [["Документация OpenAI Agents SDK", "https://openai.github.io/openai-agents-js/"], ["Документация LangGraph", "https://langchain-ai.github.io/langgraph/"]];
+  const day = courseDay();
+  const zi = zoneIndexForDay(day);
+  const qi = questIndexForDay(day);
+  const z = zones[zi];
+  const q = z.q[qi];
+  const links = dayResources[day] || [["Документация OpenAI Agents SDK", "https://openai.github.io/openai-agents-js/"], ["Документация LangGraph", "https://langchain-ai.github.io/langgraph/"]];
   const linksHtml = links.map(([label, href]) => `<a href="${href}" target="_blank" rel="noopener">${label}</a>`).join("");
-  document.getElementById("todayTitle").textContent = `День ${todayDay}: ${q}`;
-  document.getElementById("todayZone").textContent = `Зона ${todayZone + 1}: ${z.t}`;
+  document.getElementById("todayTitle").textContent = `День ${day}: ${q}`;
+  document.getElementById("todayZone").textContent = `Зона ${zi + 1}: ${z.t}`;
   document.getElementById("todayQuest").textContent = q;
   document.getElementById("todayArtifact").textContent = `Артефакт: ${z.artifact}`;
-  document.getElementById("focusLine").textContent = `Сегодня учить: ${q}. Это ${todayQuest + 1}-й квест в зоне "${z.t}".`;
+  document.getElementById("focusLine").textContent = `Сегодня учить: ${q}. Это ${qi + 1}-й квест в зоне "${z.t}".`;
   document.getElementById("focusArtifact").textContent = `Сдать: ${z.artifact}`;
   document.getElementById("focusResources").innerHTML = linksHtml;
 }
 function renderTimeline() {
   const root = document.getElementById("timeline");
+  const zi = courseZone();
   root.innerHTML = "";
   zones.forEach((_, i) => {
     const tick = document.createElement("div");
-    tick.className = `tick ${zoneDone(i) ? "done" : ""} ${i === todayZone ? "current" : ""}`;
+    tick.className = `tick ${zoneDone(i) ? "done" : ""} ${i === zi ? "current" : ""}`;
     tick.title = `Зона ${i + 1}`;
     root.appendChild(tick);
   });
 }
 function renderSkillBars() {
-  const buckets = [
-    ["Математика", [0]],
-    ["Python", [1]],
-    ["ML", [2,3]],
-    ["LLM", [4,5]],
-    ["RAG", [6,7]],
-    ["Бизнес", [8,9,10]],
-    ["Мультиагенты", [11,20,21]],
-    ["Продакшн", [12,13,14,15,16,17,18,19,22,23]]
-  ];
+  const buckets = SKILL_BUCKETS;
+  const homeIdx = CLASS_BRANCH[state.class % CLASS_BRANCH.length];
   const root = document.getElementById("skillBars");
   root.innerHTML = "";
-  buckets.forEach(([name, ids]) => {
+  buckets.forEach(([rawName, ids], bi) => {
+    const name = bi === homeIdx ? `${rawName} ★` : rawName;
     let total = 0, done = 0;
     ids.forEach(zi => {
       total += zones[zi].q.length;
@@ -962,17 +1706,9 @@ function renderSkillBars() {
     root.appendChild(row);
   });
 }
-function renderClasses() {
-  const root = document.getElementById("classes");
-  root.innerHTML = "";
-  classes.forEach((c, i) => {
-    const b = document.createElement("button");
-    b.className = `classCard ${state.class === i ? "active" : ""}`;
-    b.innerHTML = `<div class="sigil"><img class="portrait" src="${portraitSvg(i)}" alt="${c[0]}"></div><div><strong>${c[0]}</strong><span>${c[1]}</span></div><em>${state.class === i ? "выбран" : "сменить"}</em>`;
-    b.onclick = () => { state.class = i; save(); render(); };
-    root.appendChild(b);
-  });
-}
+// renderClasses удалена вместе с панелью классов: класс даёт множитель XP,
+// поэтому свободная смена превращалась бы в эксплойт — он фиксируется
+// при создании героя.
 function renderSkillTree() {
   const root = document.getElementById("skillTreeGrid");
   const lines = document.getElementById("skillTreeLines");
@@ -998,9 +1734,10 @@ function renderSkillTree() {
       lines.appendChild(link);
     });
   });
+  const todayZoneIdx = courseZone();
   skillBranches.forEach(branch => {
     const {total, done, complete} = stats[branch.id];
-    const current = branch.zones.includes(todayZone);
+    const current = branch.zones.includes(todayZoneIdx);
     const locked = branch.deps.length && !branch.deps.some(dep => stats[dep]?.done > 0 || stats[dep]?.complete);
     const card = document.createElement("button");
     card.className = `skillNode ${current ? "current" : ""} ${complete ? "done" : ""} ${locked ? "locked" : ""}`;
@@ -1018,13 +1755,14 @@ function renderSkillTree() {
 }
 function renderZones() {
   const root = document.getElementById("zones");
+  const zi = courseZone();
   root.innerHTML = "";
   zones.forEach((z, i) => {
     const b = document.createElement("button");
     b.className = `zoneBtn ${selected === i ? "active" : ""} ${zoneDone(i) ? "done" : ""}`;
     const complete = z.q.filter((_, qi) => isDone(i, qi)).length;
     b.innerHTML = `<div class="num">ЗОНА ${i + 1} · ДНИ ${z.days}</div><strong>${z.t}</strong><span>${complete}/${z.q.length} квестов · ${z.xp} XP</span><div class="seal">${z.seal}</div>`;
-    if (i === todayZone) b.innerHTML += `<span class="pill todayMark">сегодня</span>`;
+    if (i === zi) b.innerHTML += `<span class="pill todayMark">сегодня</span>`;
     b.onclick = () => { selected = i; save(); render(); };
     root.appendChild(b);
   });
@@ -1039,42 +1777,400 @@ function renderDetail() {
   document.getElementById("artifact").innerHTML = `<b>Артефакт зоны:</b> ${z.artifact}`;
   const root = document.getElementById("quests");
   root.innerHTML = "";
+  const LABEL = {quiz: "викторина", criteria: "самопроверка", todo: "в разработке"};
   z.q.forEach((q, i) => {
-    const label = document.createElement("label");
-    label.className = `quest ${isDone(selected, i) ? "done" : ""}`;
-    label.innerHTML = `<input type="checkbox" ${isDone(selected, i) ? "checked" : ""}><div><strong>${q}</strong><span>+${Math.round(z.xp / z.q.length)} XP · День ${Number(z.days.split("-")[0]) + i}</span></div>`;
-    label.querySelector("input").onchange = e => {
-      state.done[questKey(selected, i)] = e.target.checked;
-      if (!e.target.checked) delete state.done[questKey(selected, i)];
+    const kind = questKind(selected, i);
+    const r = record(selected, i);
+    const open = activeQuest && activeQuest.z === selected && activeQuest.q === i;
+    const btn = document.createElement("button");
+    btn.className = `quest ${r ? "done" : ""} ${open ? "active" : ""}`;
+    btn.innerHTML = `<div><strong>${q}</strong>` +
+      `<span>${r ? `${r.c}/${r.n} · +${questXp(selected, i)} XP` : `+${baseQuestXp(selected)} XP`} · День ${Number(z.days.split("-")[0]) + i}</span></div>` +
+      `<span class="pill statusPill ${kind === "todo" ? "todo" : ""}">${LABEL[kind]}</span>`;
+    btn.onclick = () => { startAttempt(selected, i); render(); };
+    root.appendChild(btn);
+  });
+}
+// ── Викторина ───────────────────────────────────────────────────────────────
+// attempt живёт только в памяти: незаконченная попытка намеренно не переживает
+// перезагрузку, иначе можно было бы подсматривать разборы и переоткрывать квест.
+let activeQuest = null;   // {z, q}
+let attempt = null;       // {key, picks, submitted, boost, dropped, hint, peek, gone}
+
+function startAttempt(z, q) {
+  activeQuest = {z, q};
+  attempt = {key: questKey(z, q), picks: {}, submitted: false, boost: 0, dropped: null, hint: null, peek: null, gone: {}};
+}
+function attemptScore() {
+  const items = bankQuiz(activeQuest.z, activeQuest.q) || [];
+  let c = 0, n = 0;
+  items.forEach((it, i) => {
+    if (attempt.dropped === i) return;          // «Делегирование» убирает вопрос из подсчёта
+    n++;
+    if (attempt.picks[i] === it.answer) c++;
+  });
+  return {c, n};
+}
+function renderQuest() {
+  const title = document.getElementById("questPanelTitle");
+  const meta = document.getElementById("questPanelMeta");
+  const body = document.getElementById("questBody");
+
+  if (!activeQuest) {
+    title.textContent = "Испытание";
+    meta.textContent = "Выбери квест в панели зоны.";
+    body.innerHTML = "";
+    return;
+  }
+  const {z, q} = activeQuest;
+  const zone = zones[z];
+  const kind = questKind(z, q);
+  const r = record(z, q);
+  const home = isHomeZone(z);
+
+  title.textContent = zone.q[q];
+  meta.innerHTML = `Зона ${z + 1}: ${zone.t} · базовый XP ${baseQuestXp(z)}` +
+    (home ? ` · <b>родная ветка ×${HOME_BRANCH_XP}</b>` : "") +
+    (r ? ` · лучший результат ${r.c}/${r.n}` : "");
+
+  if (kind === "quiz") return renderQuiz(body);
+  if (kind === "criteria") return renderCriteria(body);
+  renderTodoQuest(body);
+}
+function renderQuiz(body) {
+  const {z, q} = activeQuest;
+  const items = bankQuiz(z, q);
+  if (!attempt || attempt.key !== questKey(z, q)) startAttempt(z, q);
+  body.innerHTML = "";
+
+  items.forEach((it, i) => {
+    const card = document.createElement("div");
+    const picked = attempt.picks[i];
+    const right = picked === it.answer;
+    card.className = "qCard" +
+      (attempt.dropped === i ? " skipped" : "") +
+      (attempt.submitted && attempt.dropped !== i ? (right ? " correct" : " wrong") : "");
+
+    const head = `<div class="qNum">Вопрос ${i + 1} из ${items.length}${attempt.dropped === i ? " · делегирован" : ""}</div>` +
+      `<p class="qPrompt">${it.prompt}</p>`;
+    card.innerHTML = head;
+
+    it.options.forEach((opt, j) => {
+      const lab = document.createElement("label");
+      let cls = "qOpt";
+      if (attempt.gone[`${i}:${j}`]) cls += " gone";
+      if (picked === j) cls += " picked";
+      if (attempt.submitted) {
+        if (j === it.answer) cls += " isRight";
+        else if (picked === j) cls += " isWrong";
+      }
+      lab.className = cls;
+      lab.innerHTML = `<input type="radio" name="q${i}" ${picked === j ? "checked" : ""} ${attempt.submitted || attempt.dropped === i ? "disabled" : ""}><span>${opt}</span>`;
+      lab.querySelector("input").onchange = () => { attempt.picks[i] = j; render(); };
+      card.appendChild(lab);
+    });
+
+    if (attempt.hint === i && !attempt.submitted) {
+      card.insertAdjacentHTML("beforeend", `<p class="qHint">Подсказка: ${it.explanation.split(". ")[0]}.</p>`);
+    }
+    if (attempt.peek === i || attempt.submitted) {
+      card.insertAdjacentHTML("beforeend", `<p class="qExplain"><b>Разбор.</b> ${it.explanation}</p>`);
+    }
+    body.appendChild(card);
+  });
+
+  const {c, n} = attemptScore();
+  const actions = document.createElement("div");
+  actions.className = "questActions";
+
+  if (!attempt.submitted) {
+    const answered = items.filter((_, i) => attempt.dropped !== i && attempt.picks[i] !== undefined).length;
+    actions.innerHTML = `<button class="primaryBtn" id="submitQuiz" ${answered < n ? "disabled" : ""}>Проверить</button>` +
+      `<span class="small">Отвечено ${answered} из ${n} · нужно ${Math.ceil(n * PASS_RATIO)} верных</span>`;
+  } else {
+    const passed = c / n >= PASS_RATIO;
+    const gained = Math.round(baseQuestXp(z) * xpFactor(c, n) * classMultiplier(z) * (1 + attempt.boost));
+    actions.innerHTML = `<span class="questVerdict ${passed ? "pass" : "fail"}">${c} из ${n} — ${passed ? "квест пройден" : "не пройден"}</span>` +
+      `<span class="small">${passed ? `+${gained} XP` : "XP не начислен"}</span>` +
+      `<button class="miniBtn" id="retryQuiz">Пройти заново</button>`;
+  }
+  body.appendChild(actions);
+
+  if (!attempt.submitted) {
+    const btn = document.getElementById("submitQuiz");
+    if (btn) btn.onclick = () => {
+      attempt.submitted = true;
+      const s = attemptScore();
+      if (s.c / s.n >= PASS_RATIO) saveResult(z, q, s.c, s.n);
       save();
       render();
     };
-    root.appendChild(label);
-  });
+  } else {
+    document.getElementById("retryQuiz").onclick = () => { startAttempt(z, q); render(); };
+  }
 }
+function renderCriteria(body) {
+  const {z, q} = activeQuest;
+  const list = bankCriteria(z, q);
+  const r = record(z, q);
+  const checked = r ? r.c : 0;
+  if (!attempt || attempt.key !== questKey(z, q)) startAttempt(z, q);
+  // Отметки критериев держим в attempt.picks: {индекс: true}
+  if (checked === list.length) list.forEach((_, i) => { attempt.picks[i] = true; });
+
+  body.innerHTML = `<p class="small">Самопроверка: отметь выполненные критерии. Квест засчитывается, когда отмечены все.</p>`;
+  const ul = document.createElement("div");
+  ul.className = "criteria";
+  list.forEach((crit, i) => {
+    const lab = document.createElement("label");
+    lab.innerHTML = `<input type="checkbox" ${attempt.picks[i] ? "checked" : ""}><span>${crit}</span>`;
+    lab.querySelector("input").onchange = e => {
+      if (e.target.checked) attempt.picks[i] = true; else delete attempt.picks[i];
+      const done = list.filter((_, j) => attempt.picks[j]).length;
+      if (done === list.length) saveResult(z, q, list.length, list.length);
+      else delete state.done[questKey(z, q)];
+      save();
+      render();
+    };
+    ul.appendChild(lab);
+  });
+  body.appendChild(ul);
+
+  const done = list.filter((_, j) => attempt.picks[j]).length;
+  body.insertAdjacentHTML("beforeend",
+    `<div class="questActions"><span class="questVerdict ${done === list.length ? "pass" : "fail"}">${done} из ${list.length}</span>` +
+    `<span class="small">${done === list.length ? `+${questXp(z, q)} XP` : "отметь все критерии"}</span></div>`);
+}
+function renderTodoQuest(body) {
+  const {z, q} = activeQuest;
+  const on = isDone(z, q);
+  body.innerHTML = `<p class="small">Вопросы для этого квеста ещё не написаны. Пока отметка ставится вручную — как раньше.</p>`;
+  const ul = document.createElement("div");
+  ul.className = "criteria";
+  const lab = document.createElement("label");
+  lab.innerHTML = `<input type="checkbox" ${on ? "checked" : ""}><span>Квест выполнен</span>`;
+  lab.querySelector("input").onchange = e => {
+    if (e.target.checked) state.done[questKey(z, q)] = {c: 1, n: 1};
+    else delete state.done[questKey(z, q)];
+    save();
+    render();
+  };
+  ul.appendChild(lab);
+  body.appendChild(ul);
+}
+function renderAbilityButton() {
+  const btn = document.getElementById("useAbility");
+  const a = ability();
+  const ready = abilityReady();
+  btn.textContent = ready ? a.name : `${a.name} — использовано`;
+  btn.disabled = !ready;
+  btn.title = a.desc;
+}
+// Способности сознательно ограничены текущей попыткой викторины: заряд один
+// на день курса, восстанавливается при смене дня.
+function useAbility() {
+  if (!abilityReady() || !activeQuest || questKind(activeQuest.z, activeQuest.q) !== "quiz") return;
+  const items = bankQuiz(activeQuest.z, activeQuest.q);
+  const firstUnanswered = items.findIndex((_, i) => attempt.picks[i] === undefined);
+  let note = "";
+
+  switch (state.class % ABILITIES.length) {
+    case 0:
+      items.forEach((it, i) => {
+        const wrong = it.options.map((_, j) => j).filter(j => j !== it.answer);
+        attempt.gone[`${i}:${wrong[i % wrong.length]}`] = true;
+      });
+      note = "Из каждого вопроса убран один неверный вариант.";
+      break;
+    case 1:
+      if (firstUnanswered >= 0) { attempt.picks[firstUnanswered] = items[firstUnanswered].answer; note = `Вопрос ${firstUnanswered + 1} засчитан верным.`; }
+      break;
+    case 2:
+      if (attempt.submitted) {
+        items.forEach((it, i) => { if (attempt.picks[i] !== it.answer) delete attempt.picks[i]; });
+        attempt.submitted = false;
+        note = "Неверные ответы сброшены, верные сохранены.";
+      } else note = "Кросс-валидация применяется после проверки.";
+      break;
+    case 3:
+      attempt.hint = firstUnanswered >= 0 ? firstUnanswered : 0;
+      note = `Подсказка открыта к вопросу ${attempt.hint + 1}.`;
+      break;
+    case 4: {
+      const s = attemptScore();
+      note = `Сейчас верных: ${s.c} из ${s.n}.`;
+      break;
+    }
+    case 5:
+      attempt.peek = firstUnanswered >= 0 ? firstUnanswered : 0;
+      note = `Разбор вопроса ${attempt.peek + 1} открыт заранее.`;
+      break;
+    case 6:
+      attempt.dropped = firstUnanswered >= 0 ? firstUnanswered : 0;
+      delete attempt.picks[attempt.dropped];
+      note = `Вопрос ${attempt.dropped + 1} делегирован и не идёт в зачёт.`;
+      break;
+    case 7:
+      attempt.boost = 0.15;
+      note = "К XP за эту попытку добавлено 15%.";
+      break;
+  }
+  if (note.startsWith("Кросс-валидация применяется")) { flashAbility(note); return; }
+  state.abilityUsedOn = localDateStr();
+  save();
+  render();
+  flashAbility(note);
+}
+function flashAbility(text) {
+  const panel = document.querySelector(".questPanel");
+  if (!panel) return;
+  const old = panel.querySelector(".abilityNote");
+  if (old) old.remove();
+  if (!text) return;
+  panel.insertAdjacentHTML("beforeend", `<p class="abilityNote">${text}</p>`);
+}
+function renderCoverage() {
+  let quizzes = 0, crit = 0, total = 0, zonesFull = 0;
+  zones.forEach((z, zi) => {
+    let none = 0;
+    z.q.forEach((_, qi) => {
+      total++;
+      const k = questKind(zi, qi);
+      if (k === "quiz") quizzes++; else if (k === "criteria") crit++; else none++;
+    });
+    if (!none) zonesFull++;
+  });
+  document.getElementById("coverageLine").textContent =
+    `Контент: ${zonesFull}/${zones.length} зон · ${quizzes} викторин · ${crit} самопроверок · ${total - quizzes - crit} без вопросов`;
+}
+function renderPlayer() {
+  const c = classes[state.class % classes.length];
+  document.getElementById("playerCard").innerHTML =
+    `<img src="${portraitSvg(state.class, state.avatar)}" alt="${state.name} — ${c[0]}">` +
+    `<div><em>день ${courseDay()}</em><strong>${state.name}</strong><span>${c[0]}</span></div>`;
+}
+// Черновик выбора: пишем в state только при сабмите, чтобы брошенный
+// экран создания не оставлял следов.
+let draftClass = 0;
+let draftAvatar = 0;
+function renderGate() {
+  const classRoot = document.getElementById("gateClasses");
+  classRoot.innerHTML = "";
+  classes.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = `gateTile classTile ${draftClass === i ? "active" : ""}`;
+    b.setAttribute("aria-pressed", draftClass === i);
+    b.innerHTML = `<img src="${portraitSvg(i, draftAvatar)}" alt="Портрет: ${looks[draftAvatar].label} — ${c[0]}">` +
+      `<span class="tTxt"><strong>${c[0]}</strong><span>${c[1]}</span></span>` +
+      `<span class="tSigil" aria-hidden="true">${c[2]}</span>`;
+    b.onclick = () => { draftClass = i; renderGate(); };
+    classRoot.appendChild(b);
+  });
+  const avatarRoot = document.getElementById("gateAvatars");
+  avatarRoot.innerHTML = "";
+  looks.forEach((lk, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = `gateTile lookTile ${draftAvatar === i ? "active" : ""}`;
+    b.title = lk.label;
+    b.setAttribute("aria-pressed", draftAvatar === i);
+    // Внешности показываем в цветах выбранного класса — так видно, что оси независимы.
+    b.innerHTML = `<img src="${portraitSvg(draftClass, i)}" alt="Внешность: ${lk.label} — ${lk.note}">`;
+    b.onclick = () => { draftAvatar = i; renderGate(); };
+    avatarRoot.appendChild(b);
+  });
+  // Ветка и способность читаются из массивов, которые управляют механикой,
+  // а не дублируются в данных экрана — иначе витрина разойдётся с правилами.
+  const branch = SKILL_BUCKETS[CLASS_BRANCH[draftClass % CLASS_BRANCH.length]];
+  const ab = ABILITIES[draftClass % ABILITIES.length];
+  const hero = document.getElementById("heroBig");
+  hero.src = portraitSvg(draftClass, draftAvatar);
+  hero.alt = `Портрет героя: ${looks[draftAvatar].label} — ${classes[draftClass][0]}`;
+  document.getElementById("heroClassName").textContent = classes[draftClass][0];
+  document.getElementById("heroLookName").textContent = looks[draftAvatar].label;
+  document.getElementById("giftBranch").textContent = branch[0];
+  document.getElementById("giftMult").textContent = HOME_BRANCH_XP;
+  document.getElementById("giftSigil").textContent = classes[draftClass][2];
+  document.getElementById("giftAbility").textContent = ab.name;
+  document.getElementById("giftAbilityDesc").textContent = ab.desc;
+}
+
+function showGate() {
+  draftClass = state.class || 0;
+  draftAvatar = state.avatar || 0;
+  document.getElementById("gateName").value = state.name || "";
+  document.getElementById("gateError").hidden = true;
+  renderGate();
+  document.getElementById("app").hidden = true;
+  document.getElementById("gate").hidden = false;
+  document.getElementById("gateName").focus();
+}
+document.getElementById("gateName").oninput = () => {
+  document.getElementById("gateError").hidden = true;
+};
+document.getElementById("gateForm").onsubmit = e => {
+  e.preventDefault();
+  const input = document.getElementById("gateName");
+  const name = input.value.trim();
+  if (!name) {
+    document.getElementById("gateError").hidden = false;
+    input.classList.remove("focusFlash");
+    void input.offsetWidth;
+    input.classList.add("focusFlash");
+    input.focus();
+    return;
+  }
+  state.name = name;
+  state.class = draftClass;
+  state.avatar = draftAvatar;
+  state.startDate = localDateStr();
+  selected = 0;
+  startAttempt(courseZone(), courseQuest());
+  save();
+  render();
+};
 function render() {
+  // Гейт внутри render(), а не только на старте: любой путь, обнуливший
+  // startDate (сброс), сам возвращает на экран создания.
+  if (!isRegistered()) { showGate(); return; }
+  document.getElementById("gate").hidden = true;
+  document.getElementById("app").hidden = false;
+  renderPlayer();
   renderStats();
   renderToday();
   renderTimeline();
   renderSkillBars();
-  renderClasses();
   renderSkillTree();
   renderZones();
   renderDetail();
+  renderQuest();
+  renderAbilityButton();
+  renderCoverage();
+  document.getElementById("mapBody").hidden = !state.mapOpen;
+  document.getElementById("toggleMap").textContent = state.mapOpen ? "Скрыть карту" : "Показать карту";
 }
+// Раньше кнопка просто ставила отметку. Теперь она открывает испытание —
+// пройти квест можно только ответив на вопросы.
 document.getElementById("completeToday").onclick = () => {
-  state.done[questKey(todayZone, todayQuest)] = true;
-  selected = todayZone;
+  const zi = courseZone();
+  selected = zi;
+  startAttempt(zi, courseQuest());
   save();
   render();
+  requestAnimationFrame(() => {
+    const panel = document.querySelector(".questPanel");
+    if (panel) panel.scrollIntoView({behavior: "smooth", block: "start"});
+  });
 };
 document.getElementById("goToday").onclick = () => {
-  selected = todayZone;
+  const zi = courseZone();
+  selected = zi;
   save();
   render();
   requestAnimationFrame(() => {
     const cards = Array.from(document.querySelectorAll(".zoneBtn"));
-    const card = cards[todayZone];
+    const card = cards[zi];
     if (card) {
       card.scrollIntoView({behavior: "smooth", block: "center"});
       card.classList.remove("focusFlash");
@@ -1083,23 +2179,34 @@ document.getElementById("goToday").onclick = () => {
     }
   });
 };
-document.getElementById("completeZone").onclick = () => {
-  zones[selected].q.forEach((_, i) => state.done[questKey(selected, i)] = true);
+// Кнопка «Закрыть зону» удалена: она отмечала все 7 квестов разом и обходила
+// викторину целиком, обесценивая проверку знаний одним кликом.
+document.getElementById("toggleMap").onclick = () => {
+  state.mapOpen = !state.mapOpen;
   save();
   render();
 };
+document.getElementById("useAbility").onclick = useAbility;
 document.getElementById("resetState").onclick = () => {
-  if (confirm("Сбросить весь прогресс?")) {
-    state.done = {};
-    save();
-    render();
-  }
+  if (!confirm("Сбросить персонажа и весь прогресс? Кампания начнётся заново.")) return;
+  localStorage.removeItem(KEY_STATE);
+  localStorage.removeItem(KEY_SELECTED);
+  // state объявлен через const — только мутация полей, не переприсваивание.
+  Object.assign(state, defaultState());
+  selected = 0;
+  activeQuest = null;
+  attempt = null;
+  // Намеренно без save(): он тут же переписал бы только что удалённые ключи.
+  render();
 };
 document.getElementById("exportState").onclick = async () => {
-  const text = JSON.stringify({exportedAt: new Date().toISOString(), class: classes[state.class][0], ...totals(), state}, null, 2);
+  const text = JSON.stringify({exportedAt: new Date().toISOString(), name: state.name, class: classes[state.class][0], startDate: state.startDate, day: courseDay(), ...totals(), state}, null, 2);
   await navigator.clipboard.writeText(text);
   alert("Прогресс скопирован в буфер.");
 };
+// По умолчанию открыт квест текущего дня — он же приказ дня.
+function openTodayQuest() { startAttempt(courseZone(), courseQuest()); }
+if (isRegistered()) { loadSelected(); openTodayQuest(); }
 render();
 </script>
 </body>

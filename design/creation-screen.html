@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Путь ИИ — Создание героя</title>
+<style>
+/* ===== Токены =====
+   --bg          основной фон сцены
+   --ink         основной текст
+   --muted       вторичный текст
+   --gold        тёплое золото (заголовки, подписи)
+   --gold-hi     светлый блик золота
+   --bronze      тёмная бронза (рамы, металл)
+   --ember       огненный акцент (кнопка, свечения)
+   --line        цвет тонких линий/границ панелей
+   --err         цвет ошибки
+   --glow        тёплое свечение выбранного (rgba)
+*/
+:root{
+  color-scheme: dark;
+  --bg:#0a090e;
+  --ink:#eadfc4;
+  --muted:#b6a683;
+  --gold:#d9b87a;
+  --gold-hi:#f2d9a0;
+  --bronze:#8f7448;
+  --ember:#d07a35;
+  --line:#4d3d2a;
+  --err:#ffa294;
+  --glow:rgba(224,150,64,.55);
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100vh;
+  color:var(--ink);
+  font:14px/1.5 var(--sans);
+  background:
+    radial-gradient(ellipse 60% 42% at 50% 30%, rgba(214,126,44,.14), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 50% 8%, rgba(120,60,110,.12), transparent 70%),
+    repeating-linear-gradient(115deg, rgba(255,235,190,.012) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg,#0c0a10 0%, #0a090e 45%, #060509 100%);
+}
+body::after{ /* виньетка */
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:6;
+  background:radial-gradient(ellipse 75% 62% at 50% 42%, transparent 55%, rgba(0,0,0,.62) 100%);
+}
+[hidden]{display:none!important}
+button,input{font:inherit}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px;border-radius:2px}
+a{color:var(--gold)} a:hover{color:var(--gold-hi)}
+
+.page{position:relative;z-index:1;width:min(1280px,100%);margin:0 auto;padding:28px 20px 48px}
+
+/* ===== Заголовок ===== */
+.gateBrand{text-align:center;margin-bottom:26px}
+.eyebrow{
+  color:var(--gold);font:700 11px/1 var(--sans);
+  letter-spacing:.34em;text-transform:uppercase;
+}
+.gateBrand h1{
+  margin:14px 0 0;
+  font:400 clamp(34px,5vw,54px)/1.05 var(--serif);
+  letter-spacing:.14em;text-transform:uppercase;
+  background:linear-gradient(180deg,#f6e3b4 0%,var(--gold) 45%,#8a6b3a 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 2px 24px rgba(214,150,60,.18);
+}
+.brandRule{display:flex;align-items:center;gap:14px;justify-content:center;margin:14px auto 12px;width:min(520px,80%)}
+.brandRule i{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--bronze))}
+.brandRule i:last-child{background:linear-gradient(90deg,var(--bronze),transparent)}
+.brandRule b{color:var(--gold);font-size:12px;line-height:1}
+.gateBrand p{margin:0 auto;max-width:52ch;color:var(--muted);font-size:14px}
+
+/* ===== Сцена ===== */
+.stage{display:grid;grid-template-columns:minmax(232px,290px) minmax(300px,1fr) minmax(232px,290px);gap:24px;align-items:start;margin-bottom:26px}
+.stageCenter{order:0}
+.stageLeft{order:0}
+.stageRight{order:0}
+
+.colLabel{
+  display:block;margin:0 0 10px;color:var(--gold);
+  font:700 11px/1 var(--sans);letter-spacing:.26em;text-transform:uppercase;
+}
+
+/* ===== Панель (кованая оправа, компакт) ===== */
+.forged{
+  position:relative;border:1px solid var(--line);border-radius:6px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(217,184,122,.06), transparent 55%),
+    linear-gradient(180deg, rgba(30,24,20,.85), rgba(12,10,10,.92));
+  box-shadow:0 0 0 1px rgba(0,0,0,.6), inset 0 0 0 1px rgba(217,184,122,.07), 0 16px 36px rgba(0,0,0,.5);
+}
+
+/* ===== Портрет-сцена ===== */
+.heroStage{position:relative;text-align:center;overflow:clip;overflow-clip-margin:0}
+.heroGlow{
+  position:absolute;left:50%;top:44%;width:130%;height:120%;
+  transform:translate(-50%,-50%);pointer-events:none;
+  background:radial-gradient(ellipse 50% 44% at 50% 50%, rgba(224,146,58,.27), transparent 70%);
+  animation:emberBreath 5.5s ease-in-out infinite;
+}
+@keyframes emberBreath{0%,100%{opacity:.75}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.heroGlow{animation:none}.embers{display:none}}
+/* угли */
+.embers{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+.embers i{position:absolute;bottom:-10px;width:4px;height:4px;border-radius:50%;background:#eda054;box-shadow:0 0 9px 2px rgba(232,138,60,.5);opacity:0;animation:emberRise linear infinite}
+@keyframes emberRise{0%{transform:translate(0,0) scale(1);opacity:0}8%{opacity:.85}55%{opacity:.45}100%{transform:translate(34px,-94vh) scale(.35);opacity:0}}
+.embers i:nth-child(1){left:10%;animation-duration:9s}
+.embers i:nth-child(2){left:26%;animation-duration:11s;animation-delay:2.2s;width:3px;height:3px}
+.embers i:nth-child(3){left:43%;animation-duration:8s;animation-delay:4s}
+.embers i:nth-child(4){left:56%;animation-duration:12.5s;animation-delay:1s;width:3px;height:3px}
+.embers i:nth-child(5){left:69%;animation-duration:9.5s;animation-delay:3.4s}
+.embers i:nth-child(6){left:81%;animation-duration:11.5s;animation-delay:5.2s;width:3px;height:3px}
+.embers i:nth-child(7){left:91%;animation-duration:8.5s;animation-delay:.6s}
+.heroFrame{
+  position:relative;display:block;width:min(400px,100%);margin:0 auto;padding:12px;
+  border-radius:8px;
+  background:
+    linear-gradient(160deg,#7a6138 0%,#3a2d1d 30%,#241b12 52%,#5c4a2c 78%,#1c1510 100%);
+  box-shadow:
+    0 0 0 1px #0c0906,
+    inset 0 0 0 1px rgba(242,217,160,.35),
+    0 26px 60px rgba(0,0,0,.65),
+    0 0 90px rgba(216,132,48,.14);
+}
+.heroFrame::before{
+  content:"";position:absolute;inset:8px;pointer-events:none;z-index:2;
+  border:1px solid rgba(242,217,160,.5);border-radius:4px;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.55), inset 0 0 42px rgba(0,0,0,.55);
+}
+.heroFrame img{display:block;width:100%;height:auto;border-radius:3px;background:#060509}
+.fCorner{position:absolute;width:34px;height:34px;z-index:3;pointer-events:none}
+.fCorner.tl{top:-5px;left:-5px}
+.fCorner.tr{top:-5px;right:-5px;transform:scaleX(-1)}
+.fCorner.bl{bottom:-5px;left:-5px;transform:scaleY(-1)}
+.fCorner.br{bottom:-5px;right:-5px;transform:scale(-1)}
+.heroCaption{margin-top:16px}
+.heroCaption strong{
+  display:block;font:400 26px/1.15 var(--serif);letter-spacing:.12em;text-transform:uppercase;color:var(--gold-hi);
+  text-shadow:0 0 22px rgba(224,150,64,.35);
+}
+.heroCaption span{display:block;margin-top:5px;color:var(--muted);font-size:13px;font-style:italic;font-family:var(--serif)}
+
+/* ===== Плитки (общее) ===== */
+.gateGrid{display:grid;gap:9px}
+.gateTile{
+  position:relative;width:100%;text-align:left;cursor:pointer;
+  color:var(--ink);border:1px solid var(--line);border-radius:6px;
+  background:linear-gradient(180deg, rgba(32,25,21,.9), rgba(13,11,11,.95));
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.5);
+  transition:box-shadow .18s ease, filter .18s ease;
+  filter:saturate(.82) brightness(.92);
+}
+.gateTile:hover{filter:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.5), 0 0 18px rgba(224,150,64,.22), inset 0 0 14px rgba(224,150,64,.06)}
+.gateTile.active{
+  filter:none;border-color:#a8834a;
+  box-shadow:
+    inset 0 0 0 1px rgba(242,217,160,.5),
+    inset 0 0 22px rgba(224,150,64,.13),
+    0 0 24px var(--glow);
+}
+.gateTile.active::after{ /* метка выбора — не только цветом */
+  content:"◆";position:absolute;top:-8px;right:-6px;z-index:2;
+  width:17px;height:17px;display:grid;place-items:center;
+  color:#1c130a;background:linear-gradient(180deg,var(--gold-hi),var(--bronze));
+  border-radius:50%;font-size:9px;line-height:1;
+  box-shadow:0 0 0 1px #0c0906, 0 0 10px var(--glow);
+}
+
+/* Классы */
+.classTile{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;padding:7px 9px 7px 7px}
+.classTile img{width:46px;height:46px;display:block;border-radius:4px;border:1px solid rgba(217,184,122,.25)}
+.classTile .tTxt strong{display:block;font:700 13.5px/1.2 var(--serif);letter-spacing:.02em}
+.classTile .tTxt span{display:block;color:var(--muted);font-size:11px;line-height:1.3}
+.classTile .tSigil{color:var(--gold);font-size:15px;opacity:.85}
+
+/* Внешности */
+#gateAvatars{grid-template-columns:repeat(8,1fr)}
+.lookTile{padding:5px}
+.lookTile img{display:block;width:100%;height:auto;border-radius:4px;border:1px solid rgba(217,184,122,.2)}
+
+/* ===== Правая колонка ===== */
+.gateField{display:block;margin:0 0 18px}
+.gateField > .colLabel{margin-bottom:10px}
+#gateName{
+  width:100%;padding:12px 13px;color:var(--ink);border-radius:5px;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg, rgba(8,7,9,.9), rgba(20,16,13,.85));
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.65), 0 1px 0 rgba(217,184,122,.1);
+  font-family:var(--serif);font-size:16px;letter-spacing:.03em;
+}
+#gateName::placeholder{color:#8f8066;font-style:italic}
+#gateName:focus{border-color:var(--gold);outline:none;box-shadow:inset 0 2px 8px rgba(0,0,0,.65), 0 0 0 1px rgba(217,184,122,.4), 0 0 16px rgba(224,150,64,.28)}
+#gateName[aria-invalid="true"]{border-color:#8c3a30}
+
+.sidePanel{padding:14px 15px}
+.sidePanel h3{
+  margin:0 0 11px;color:var(--gold);
+  font:700 11px/1 var(--sans);letter-spacing:.26em;text-transform:uppercase;
+}
+.giftRow{display:grid;grid-template-columns:20px 1fr;gap:9px;margin:0 0 11px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.giftRow .gIco{color:var(--gold);font-size:13px;line-height:1.4;text-align:center}
+.giftRow b{color:var(--ink);font-family:var(--serif);letter-spacing:.02em}
+.giftWarn{
+  margin:13px -15px -14px;padding:9px 15px 10px;font-size:11.5px;color:#c9a06a;
+  border-top:1px solid rgba(140,58,48,.4);
+  background:linear-gradient(180deg, rgba(90,30,25,.22), rgba(40,14,12,.3));
+  border-radius:0 0 6px 6px;
+}
+
+/* ===== Ошибка и кнопка ===== */
+.gateError{margin:18px auto 0;max-width:460px;text-align:center;color:var(--err);font-size:13.5px}
+.gateError::before{content:"✕ ";color:#c05545}
+.submitWrap{display:flex;justify-content:center;margin-top:20px}
+.gateSubmit{
+  position:relative;min-width:min(420px,100%);padding:15px 34px;cursor:pointer;
+  color:#1e1206;border-radius:6px;border:1px solid #f0cf8e;
+  font:700 17px/1 var(--serif);letter-spacing:.2em;text-transform:uppercase;
+  background:linear-gradient(180deg,#f2d9a0 0%,var(--gold) 38%,#c07a34 82%,#8a5423 100%);
+  box-shadow:
+    0 0 0 1px #0c0906, 0 0 0 3px rgba(143,116,72,.5),
+    inset 0 1px 0 rgba(255,244,214,.8), inset 0 -10px 18px rgba(90,40,10,.45),
+    0 14px 34px rgba(0,0,0,.55), 0 0 34px rgba(224,150,64,.28);
+  transition:box-shadow .18s ease, filter .18s ease;
+}
+.gateSubmit:hover{filter:brightness(1.07);box-shadow:
+    0 0 0 1px #0c0906, 0 0 0 3px rgba(180,146,90,.6),
+    inset 0 1px 0 rgba(255,244,214,.9), inset 0 -10px 18px rgba(90,40,10,.4),
+    0 14px 34px rgba(0,0,0,.55), 0 0 52px rgba(232,160,70,.5)}
+.gateSubmit:active{transform:translateY(1px)}
+
+/* ===== Адаптив ===== */
+@media (max-width: 980px){
+  .stage{grid-template-columns:1fr;gap:20px}
+  .stageCenter{order:1}
+  .stageRight{order:2}
+  .stageLeft{order:3}
+  #gateClasses{grid-template-columns:1fr 1fr}
+  #gateAvatars{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width: 560px){
+  .page{padding:20px 12px 36px}
+  #gateClasses{grid-template-columns:1fr}
+  #gateAvatars{grid-template-columns:repeat(4,1fr);gap:7px}
+  .gateSubmit{width:100%;min-width:0}
+  .heroFrame{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="embers" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div class="page">
+<form id="gateForm" novalidate>
+  <header class="gateBrand">
+    <div class="eyebrow">AI Agents 2026 · Совет Пути</div>
+    <h1>Создание героя</h1>
+    <div class="brandRule" aria-hidden="true"><i></i><b>✦</b><i></i></div>
+    <p>Назови себя, выбери путь и внешность. День регистрации станет первым днём кампании.</p>
+  </header>
+
+  <div class="stage">
+    <aside class="stageLeft">
+      <span class="colLabel" id="lblClasses">Класс</span>
+      <div class="gateGrid" id="gateClasses" role="group" aria-labelledby="lblClasses"></div>
+    </aside>
+
+    <div class="stageCenter heroStage">
+      <div class="heroGlow" aria-hidden="true"></div>
+      <div class="heroFrame">
+        <svg class="fCorner tl" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#0c0906" stroke-width="5"/><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#e0c184" stroke-width="2"/><path d="M4 24 Q12 14 24 4" fill="none" stroke="#8a6d42" stroke-width="1.4"/><circle cx="9" cy="9" r="3.2" fill="#e0c184" stroke="#0c0906" stroke-width="1"/></svg>
+        <svg class="fCorner tr" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#0c0906" stroke-width="5"/><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#e0c184" stroke-width="2"/><path d="M4 24 Q12 14 24 4" fill="none" stroke="#8a6d42" stroke-width="1.4"/><circle cx="9" cy="9" r="3.2" fill="#e0c184" stroke="#0c0906" stroke-width="1"/></svg>
+        <svg class="fCorner bl" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#0c0906" stroke-width="5"/><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#e0c184" stroke-width="2"/><path d="M4 24 Q12 14 24 4" fill="none" stroke="#8a6d42" stroke-width="1.4"/><circle cx="9" cy="9" r="3.2" fill="#e0c184" stroke="#0c0906" stroke-width="1"/></svg>
+        <svg class="fCorner br" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#0c0906" stroke-width="5"/><path d="M3 39 L3 12 Q3 3 12 3 L39 3" fill="none" stroke="#e0c184" stroke-width="2"/><path d="M4 24 Q12 14 24 4" fill="none" stroke="#8a6d42" stroke-width="1.4"/><circle cx="9" cy="9" r="3.2" fill="#e0c184" stroke="#0c0906" stroke-width="1"/></svg>
+        <img id="heroBig" alt="" width="400" height="400">
+      </div>
+      <div class="heroCaption">
+        <strong id="heroClassName"></strong>
+        <span id="heroLookName"></span>
+      </div>
+    </div>
+
+    <aside class="stageRight">
+      <label class="gateField">
+        <span class="colLabel">Имя героя</span>
+        <input id="gateName" type="text" maxlength="24" autocomplete="off" placeholder="Как тебя звать?">
+      </label>
+      <div class="sidePanel forged">
+        <h3>Дар пути</h3>
+        <p class="giftRow"><span class="gIco">☄</span><span><b id="giftBranch"></b> — ×1.5 к опыту в этой ветке</span></p>
+        <p class="giftRow"><span class="gIco" id="giftSigil"></span><span><b id="giftAbility"></b> — <span id="giftAbilityDesc"></span>. Раз в день.</span></p>
+        <p class="giftWarn">Класс закрепляется при создании героя — выбор необратим.</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="gateField">
+    <span class="colLabel" id="lblLooks">Внешность</span>
+    <div class="gateGrid gateGridAvatars" id="gateAvatars" role="group" aria-labelledby="lblLooks"></div>
+  </div>
+
+  <p class="gateError" id="gateError" hidden aria-live="assertive">Введи имя героя.</p>
+  <div class="submitWrap">
+    <button class="gateSubmit" type="submit">Начать путь</button>
+  </div>
+</form>
+</div>
+
+<script>
+/* ===== Палитры классов (фон, акцент, плащ) =====
+   1 Математик            #2c2140 #b58add #4a3060
+   2 Python-мастер        #12303a #6cc4d4 #1e5260
+   3 Охотник за моделями  #1a2b1c #86c07a #2f5233
+   4 Мастер промптов      #332612 #ecc466 #7a5a20
+   5 Страж агентов        #331416 #e0756a #7a262b
+   6 Архивариус RAG       #302818 #d8bc85 #6a5530
+   7 Командир оркестрации #171f36 #8aa2e0 #32406e
+   8 Инженер продакшна    #33190f #e88a4e #74381a
+*/
+const CLASSES=[
+  {name:'Математик',desc:'Векторы, вероятности, градиенты',sigil:'◇',branch:'Математика',ability:'Расчёт вероятностей',abilityDesc:'убирает по неверному варианту в каждом вопросе',pal:{bg:'#2c2140',acc:'#b58add',cloak:'#4a3060'}},
+  {name:'Python-мастер',desc:'Скрипты, данные, автоматизация',sigil:'⚙',branch:'Python',ability:'Автоматизация',abilityDesc:'засчитывает один вопрос верным',pal:{bg:'#12303a',acc:'#6cc4d4',cloak:'#1e5260'}},
+  {name:'Охотник за моделями',desc:'ML, метрики, эксперименты',sigil:'⌁',branch:'ML',ability:'Кросс-валидация',abilityDesc:'даёт перерешать неверные после проверки',pal:{bg:'#1a2b1c',acc:'#86c07a',cloak:'#2f5233'}},
+  {name:'Мастер промптов',desc:'LLM, структурированные ответы, инструменты',sigil:'✦',branch:'LLM',ability:'Уточняющий запрос',abilityDesc:'открывает подсказку',pal:{bg:'#332612',acc:'#ecc466',cloak:'#7a5a20'}},
+  {name:'Страж агентов',desc:'Циклы, память, планирование, ReAct',sigil:'⛨',branch:'Мультиагенты',ability:'Рефлексия',abilityDesc:'показывает число верных до отправки',pal:{bg:'#331416',acc:'#e0756a',cloak:'#7a262b'}},
+  {name:'Архивариус RAG',desc:'Фрагменты, поиск, цитирование',sigil:'◆',branch:'RAG',ability:'Поиск по архиву',abilityDesc:'открывает разбор заранее',pal:{bg:'#302818',acc:'#d8bc85',cloak:'#6a5530'}},
+  {name:'Командир оркестрации',desc:'Роли, передачи задач, общее состояние',sigil:'♜',branch:'Бизнес',ability:'Делегирование',abilityDesc:'исключает вопрос из подсчёта',pal:{bg:'#171f36',acc:'#8aa2e0',cloak:'#32406e'}},
+  {name:'Инженер продакшна',desc:'Деплой, наблюдаемость, стоимость',sigil:'◈',branch:'Продакшн',ability:'Откат',abilityDesc:'+15% к опыту за попытку',pal:{bg:'#33190f',acc:'#e88a4e',cloak:'#74381a'}},
+];
+
+const METAL='#8f7448', METAL_HI='#d9bd85';
+
+/* ===== Восемь внешностей =====
+   Каждая — функция draw(c), где c = {skin,skin2,hair,hair2,cloak,acc,bg}.
+   skin/hair фиксированы за внешностью; cloak/acc/bg приходят от класса. */
+const LOOKS=[
+{label:'Рогатый вождь',note:'рогатый шлем, тяжёлая челюсть, боевая раскраска',
+ tone:{skin:'#c99069',skin2:'#9c6a49',hair:'#2e2018',hair2:'#1c1310'},
+ draw:c=>`
+  <path d="M6 96 Q10 70 26 64 L70 64 Q86 70 90 96 Z" fill="url(#ck)"/>
+  <path d="M6 96 Q9 72 24 65 L34 62 Q26 78 26 96 Z" fill="#141018" stroke="${METAL}" stroke-width="1"/>
+  <path d="M90 96 Q87 72 72 65 L62 62 Q70 78 70 96 Z" fill="#141018" stroke="${METAL}" stroke-width="1"/>
+  <rect x="42" y="50" width="12" height="14" fill="${c.skin2}"/>
+  <path d="M33 28 Q33 16 48 15 Q63 16 63 28 L62 42 Q61 52 48 57 Q35 52 34 42 Z" fill="${c.skin}"/>
+  <path d="M37 47 Q42 54 48 54 Q54 54 59 47 L58 51 Q54 56 48 56 Q42 56 38 51 Z" fill="${c.hair}" opacity=".9"/>
+  <path d="M30 33 Q28 10 48 9 Q68 10 66 33 Q59 24 48 24 Q37 24 30 33 Z" fill="#39404d" stroke="#171a21" stroke-width="1"/>
+  <rect x="45.4" y="24" width="5.2" height="16" rx="1.5" fill="#39404d" stroke="#171a21" stroke-width="1"/>
+  <path d="M36 30 Q22 33 14 27 Q7 21 8 10 Q13 19 22 22 Q30 25 37 23 Z" fill="#ddd2b8" stroke="#6a5638" stroke-width="1"/>
+  <path d="M60 30 Q74 33 82 27 Q89 21 88 10 Q83 19 74 22 Q66 25 59 23 Z" fill="#ddd2b8" stroke="#6a5638" stroke-width="1"/>
+  <path d="M34 34 Q40 31 45 34 L45 38 Q40 35 35 38 Z" fill="#100c12"/>
+  <path d="M51 34 Q56 31 62 34 L61 38 Q56 35 51 38 Z" fill="#100c12"/>
+  <circle cx="40" cy="35.5" r="1.4" fill="${c.acc}"/><circle cx="56" cy="35.5" r="1.4" fill="${c.acc}"/>
+  <path d="M53 41 L56 47 M56.5 40.5 L59.5 46.5" stroke="${c.acc}" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>`},
+
+{label:'Тень в капюшоне',note:'глухой капюшон, лицо во тьме, светящиеся глаза',
+ tone:{skin:'#b98a66',skin2:'#8a6248',hair:'#1c1310',hair2:'#120c08'},
+ draw:c=>`
+  <path d="M22 96 Q26 72 38 66 L58 66 Q70 72 74 96 Z" fill="url(#ck)"/>
+  <path d="M40 66 L44 80 M56 66 L52 80" stroke="#060407" stroke-width="1.2" opacity=".55"/>
+  <path d="M50 6 Q28 10 25 38 Q23 56 35 63 L61 63 Q72 56 71 36 Q69 11 50 6 Z" fill="url(#ck)" stroke="#060407" stroke-width="1"/>
+  <path d="M50 6 Q30 12 28 36 Q27 52 37 60 Q31 50 32 36 Q34 14 50 6 Z" fill="${c.acc}" opacity=".16"/>
+  <path d="M36 32 Q35 52 48 58 Q60 52 60 32 Q55 24 48 24 Q40 24 36 32 Z" fill="#070509"/>
+  <ellipse cx="48" cy="52.5" rx="3.2" ry="2.2" fill="${c.skin2}" opacity=".5"/>
+  <path d="M47 45.5 L49 45.5 L48 47.5 Z" fill="${c.skin2}" opacity=".35"/>
+  <circle cx="42" cy="38" r="3.8" fill="${c.acc}" opacity=".2"/><circle cx="55" cy="38" r="3.8" fill="${c.acc}" opacity=".2"/>
+  <circle cx="42" cy="38" r="1.5" fill="${c.acc}"/><circle cx="55" cy="38" r="1.5" fill="${c.acc}"/>`},
+
+{label:'Лысый ветеран',note:'бритая голова, шрам через глаз, косматая седая борода',
+ tone:{skin:'#d9a87d',skin2:'#a97b57',hair:'#b9bdbf',hair2:'#7c8184'},
+ draw:c=>`
+  <path d="M8 96 Q14 70 30 65 L66 65 Q82 70 88 96 Z" fill="url(#ck)"/>
+  <path d="M8 96 Q13 72 28 66 Q24 71 22 79 Q34 73 48 73 Q62 73 74 79 Q72 71 68 66 Q83 72 88 96 Z" fill="#241a14" opacity=".95"/>
+  <rect x="41" y="50" width="14" height="12" fill="${c.skin2}"/>
+  <ellipse cx="48" cy="34" rx="16.5" ry="18" fill="${c.skin}"/>
+  <ellipse cx="42" cy="21" rx="7" ry="4" fill="#fff" opacity=".13"/>
+  <path d="M43 17 L40 30 L38 41" stroke="#8a3a3d" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M35 32.5 L44 31.5 M52 31.5 L61 32.5" stroke="${c.hair2}" stroke-width="3" stroke-linecap="round"/>
+  <path d="M37 37 L43 37 M53 37 L59 37" stroke="#181008" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M31 40 Q28 64 38 76 Q42 84 48 84 Q54 84 58 76 Q68 64 65 40 Q58 50 48 50 Q38 50 31 40 Z" fill="${c.hair}"/>
+  <path d="M39 49 Q48 56 57 49" stroke="${c.hair2}" stroke-width="2" fill="none"/>
+  <path d="M44 58 L44 74 M52 58 L52 74" stroke="${c.hair2}" stroke-width="1.2" opacity=".7"/>
+  <rect x="44" y="74" width="8" height="4" rx="1.5" fill="${METAL}" stroke="${METAL_HI}" stroke-width=".8"/>`},
+
+{label:'Дева бури',note:'полуоборот, медные волосы на одно плечо, обруч с камнем',
+ tone:{skin:'#e6ba92',skin2:'#b98a63',hair:'#a5522f',hair2:'#7c3a20'},
+ draw:c=>`
+  <path d="M24 96 Q28 74 40 68 L60 68 Q72 72 74 96 Z" fill="url(#ck)"/>
+  <path d="M60 68 Q70 71 74 80 L60 80 Z" fill="${c.acc}" opacity=".22"/>
+  <path d="M56 16 Q73 24 74 44 Q76 64 68 82 Q64 90 62 96 L46 96 Q55 76 54 58 Q53 42 50 32 Z" fill="${c.hair}"/>
+  <path d="M60 40 Q62 60 57 78" stroke="${c.hair2}" stroke-width="1.6" fill="none" opacity=".7"/>
+  <rect x="41" y="50" width="11" height="14" fill="${c.skin2}"/>
+  <path d="M32 30 Q33 16 46 15 Q60 16 60 31 L59 42 Q57 52 46 56 Q35 52 33 42 Z" fill="${c.skin}"/>
+  <path d="M35 36 Q38 34.5 41 36 M49 36 Q52 34.5 55 36" stroke="#241209" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <circle cx="38.5" cy="37" r="1.1" fill="#241209"/><circle cx="52" cy="37" r="1.1" fill="#241209"/>
+  <path d="M34 33 Q38 31 42 32 M48 32 Q52 31 56 33" stroke="${c.hair2}" stroke-width="1.5" fill="none"/>
+  <path d="M45 38 L44 44 L47 45" stroke="#8a5a3c" stroke-width="1.1" fill="none"/>
+  <path d="M41 50 Q45 52.5 50 50" stroke="#7c3f33" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M31 30 Q32 13 46 13 Q62 13 63 32 Q60 22 50 20 Q46 27 42 22 Q35 21 31 30 Z" fill="${c.hair}"/>
+  <path d="M33 27 Q46 23 59 26" stroke="${METAL_HI}" stroke-width="1.4" fill="none"/>
+  <path d="M45 22.5 L47.2 24.8 L45 27.1 L42.8 24.8 Z" fill="${c.acc}"/>
+  <circle cx="34" cy="46" r="2.2" fill="none" stroke="${METAL_HI}" stroke-width="1.1"/>`},
+
+{label:'Механик в гогглах',note:'гогглы на глазах, респиратор, ёжик волос, клёпаный ворот',
+ tone:{skin:'#b57a52',skin2:'#8a5a3a',hair:'#17141c',hair2:'#0d0b10'},
+ draw:c=>`
+  <path d="M14 96 Q18 72 32 66 L64 66 Q78 72 82 96 Z" fill="url(#ck)"/>
+  <path d="M26 78 L70 78 L70 85 L26 85 Z" fill="#161114" stroke="${METAL}" stroke-width="1"/>
+  <circle cx="33" cy="81.5" r="1.1" fill="${METAL_HI}"/><circle cx="48" cy="81.5" r="1.1" fill="${METAL_HI}"/><circle cx="63" cy="81.5" r="1.1" fill="${METAL_HI}"/>
+  <rect x="42" y="52" width="12" height="14" fill="${c.skin2}"/>
+  <path d="M33 30 Q33 18 48 17 Q63 18 63 30 L62 42 Q60 53 48 56 Q36 53 34 42 Z" fill="${c.skin}"/>
+  <path d="M32 26 L36 13 L40 22 L45 9 L50 20 L55 11 L60 22 L64 26 Q57 18 48 18 Q39 18 32 26 Z" fill="${c.hair}"/>
+  <path d="M31 36 L34 36 M62 36 L65 36" stroke="#241d18" stroke-width="3.4"/>
+  <circle cx="40" cy="37" r="7" fill="#141a1c" stroke="${METAL}" stroke-width="1.7"/>
+  <circle cx="56" cy="37" r="7" fill="#141a1c" stroke="${METAL}" stroke-width="1.7"/>
+  <rect x="45" y="35.2" width="6" height="3.6" rx="1.5" fill="${METAL}"/>
+  <circle cx="38" cy="35" r="2" fill="${c.acc}" opacity=".9"/><circle cx="54" cy="35" r="2" fill="${c.acc}" opacity=".9"/>
+  <path d="M36 46 Q36 60 48 62 Q60 60 60 46 Q54 51 48 51 Q42 51 36 46 Z" fill="#3d352c" stroke="#191410" stroke-width="1"/>
+  <path d="M43 53 L43 58 M48 54 L48 59 M53 53 L53 58" stroke="#191410" stroke-width="1.6"/>
+  <circle cx="36.5" cy="52" r="3" fill="#2a241e" stroke="${METAL}" stroke-width="1"/><circle cx="59.5" cy="52" r="3" fill="#2a241e" stroke="${METAL}" stroke-width="1"/>`},
+
+{label:'Одноглазый корсар',note:'узел волос на макушке, повязка на глазу, серьга-кольцо',
+ tone:{skin:'#8d5a3f',skin2:'#67402c',hair:'#241a12',hair2:'#17100b'},
+ draw:c=>`
+  <path d="M12 96 Q18 72 34 66 L62 66 Q78 72 84 96 Z" fill="url(#ck)"/>
+  <path d="M34 66 L66 92 L59 96 L30 73 Z" fill="#2a1e14" stroke="#0f0b08" stroke-width="1"/>
+  <g transform="rotate(-4 48 40)">
+    <rect x="42" y="52" width="12" height="13" fill="${c.skin2}"/>
+    <path d="M33 30 Q33 17 48 16 Q63 17 63 30 L62 43 Q60 53 48 57 Q36 53 34 43 Z" fill="${c.skin}"/>
+    <path d="M33 28 Q36 20 48 19 Q60 20 63 28 Q60 24 48 23 Q36 24 33 28 Z" fill="${c.hair}" opacity=".6"/>
+    <circle cx="50" cy="10" r="6" fill="${c.hair}"/>
+    <path d="M45.5 13 L54.5 13" stroke="${METAL_HI}" stroke-width="1.5"/>
+    <path d="M54 7 Q60 5 62 11" stroke="${c.hair}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M36 31 Q41 29 45 31 L45 41 Q41 44 37 41 Z" fill="#15100d" stroke="#000" stroke-width=".6"/>
+    <path d="M36 33 L30 30 M45 32 L61 26" stroke="#15100d" stroke-width="1.6"/>
+    <path d="M52 35.5 L58 35.5" stroke="#1c1208" stroke-width="1.9" stroke-linecap="round"/>
+    <path d="M51 31.5 Q55 29.5 59 31.5" stroke="${c.hair}" stroke-width="1.7" fill="none"/>
+    <path d="M42 49 Q46 52 52 50 L55.5 46.5" stroke="#5f3328" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="62.5" cy="45" r="3.1" fill="none" stroke="${METAL_HI}" stroke-width="1.4"/>
+  </g>`},
+
+{label:'Страж в маске',note:'боевая полумаска, латный ворот, руна на лбу, зачёс назад',
+ tone:{skin:'#caa27a',skin2:'#9a7654',hair:'#3b2c1e',hair2:'#281d13'},
+ draw:c=>`
+  <path d="M14 96 Q18 74 32 68 L64 68 Q78 74 82 96 Z" fill="url(#ck)"/>
+  <path d="M28 96 Q28 76 34 68 L62 68 Q68 76 68 96 Z" fill="#1a151c" stroke="${METAL}" stroke-width="1"/>
+  <path d="M29 79 L67 79 M30 88 L66 88" stroke="${METAL}" stroke-width="1"/>
+  <circle cx="34" cy="73.5" r="1.1" fill="${METAL_HI}"/><circle cx="62" cy="73.5" r="1.1" fill="${METAL_HI}"/>
+  <path d="M34 30 Q34 17 48 16 Q62 17 62 30 L61 40 Q60 47 48 49 Q36 47 35 40 Z" fill="${c.skin}"/>
+  <path d="M33 27 Q35 15 48 14 Q61 15 63 27 Q59 20 48 20 Q37 20 33 27 Z" fill="${c.hair}"/>
+  <path d="M63 27 Q66 34 64 44" stroke="${c.hair}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M37 34 L43 34 M53 34 L59 34" stroke="#1a120c" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M36 31 L43 30 M53 30 L60 31" stroke="${c.hair2}" stroke-width="1.6"/>
+  <path d="M44.5 26 L44.5 29.5 M48 24.5 L48 30 M51.5 26 L51.5 29.5" stroke="${c.acc}" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M35 39 Q35 55 48 59 Q61 55 61 39 Q55 44 48 44 Q41 44 35 39 Z" fill="#454152" stroke="#16141b" stroke-width="1"/>
+  <path d="M35 39 Q41 44 48 44 Q55 44 61 39" stroke="${c.acc}" stroke-width="1" opacity=".55" fill="none"/>
+  <path d="M48 44 L48 58" stroke="#16141b" stroke-width="1.2"/>
+  <circle cx="43" cy="51" r="1" fill="#16141b"/><circle cx="53" cy="51" r="1" fill="#16141b"/>
+  <path d="M35 39 L31 36.5 M61 39 L65 36.5" stroke="${METAL}" stroke-width="1.4"/>`},
+
+{label:'Седой мудрец',note:'старец: высокий лоб, длинные белые пряди, монокль, узкая борода',
+ tone:{skin:'#e3c49f',skin2:'#b3946f',hair:'#e6e1d6',hair2:'#c2bcae'},
+ draw:c=>`
+  <path d="M26 96 Q30 76 40 70 L56 70 Q68 76 70 96 Z" fill="url(#ck)"/>
+  <g transform="rotate(3 48 42)">
+    <rect x="43" y="52" width="10" height="14" fill="${c.skin2}"/>
+    <path d="M34 32 Q34 18 48 17 Q62 18 62 32 L61 44 Q59 54 48 57 Q37 54 35 44 Z" fill="${c.skin}"/>
+    <path d="M34 31 Q33 19 42 17 Q36 24 37 34 Z" fill="${c.hair}"/>
+    <path d="M62 31 Q63 19 54 17 Q60 24 59 34 Z" fill="${c.hair}"/>
+    <path d="M41 27 Q48 25 55 27" stroke="${c.skin2}" stroke-width="1" fill="none" opacity=".85"/>
+    <path d="M38 33 L44 32.5 M52 32.5 L58 33" stroke="${c.hair2}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M39 37.5 L43.5 37.5 M52.5 37.5 L57 37.5" stroke="#3a2c1e" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="55" cy="37.5" r="4.8" fill="none" stroke="${METAL_HI}" stroke-width="1.6"/>
+    <path d="M59 41 Q64 49 60 58" stroke="${METAL_HI}" stroke-width=".9" fill="none"/>
+    <path d="M42 46 Q40 66 44 82 Q46 90 48 92 Q50 90 52 82 Q56 66 54 46 Q51 50 48 50 Q45 50 42 46 Z" fill="${c.hair}"/>
+    <path d="M43 47 Q48 51 53 47" stroke="${c.hair2}" stroke-width="1.3" fill="none"/>
+    <path d="M48 56 L48 84" stroke="${c.hair2}" stroke-width="1" opacity=".7"/>
+  </g>
+  <path d="M36 20 Q29 34 30 56 Q30 76 34 90 L42 90 Q37 70 38 46 Z" fill="${c.hair}"/>
+  <path d="M60 20 Q67 34 66 56 Q66 76 62 90 L54 90 Q59 70 58 46 Z" fill="${c.hair}"/>
+  <path d="M34 40 Q33 62 36 82 M62 40 Q63 62 60 82" stroke="${c.hair2}" stroke-width="1.1" fill="none" opacity=".8"/>`},
+];
+
+/* Классовая экипировка: рисуется поверх фигуры, зона груди/плеч */
+const GEAR=[
+ c=>`<path d="M30 78 Q48 70 66 78" fill="none" stroke="${c.acc}" stroke-width="1" opacity=".6"/>
+  <path d="M48 66 L51.5 70 L48 74 L44.5 70 Z" fill="none" stroke="${c.acc}" stroke-width="1.5"/>
+  <path d="M48 68.2 L49.6 70 L48 71.8 L46.4 70 Z" fill="${c.acc}"/>
+  <path d="M31 69 L33 71.2 L31 73.4 L29 71.2 Z" fill="${c.acc}" opacity=".8"/>
+  <path d="M65 69 L67 71.2 L65 73.4 L63 71.2 Z" fill="${c.acc}" opacity=".8"/>`,
+ c=>`<path d="M31 66 L65 84" stroke="#241a12" stroke-width="4" opacity=".9"/>
+  <circle cx="48" cy="74" r="5" fill="#101a1e" stroke="${c.acc}" stroke-width="1.5"/>
+  <circle cx="48" cy="74" r="1.6" fill="${c.acc}"/>
+  <path d="M48 67.5 L48 65.5 M48 80.5 L48 82.5 M41.5 74 L39.5 74 M54.5 74 L56.5 74 M43.4 69.4 L42 68 M52.6 78.6 L54 80 M43.4 78.6 L42 80 M52.6 69.4 L54 68" stroke="${c.acc}" stroke-width="1.5"/>`,
+ c=>`<path d="M34 67 L62 82" stroke="#2a1e12" stroke-width="4.5"/>
+  <path d="M63 61 L70 52 M66 63 L73 55 M68 66 L75 59" stroke="#8a6d42" stroke-width="1.6"/>
+  <path d="M70 52 L68 49 M70 52 L73 51 M73 55 L71 52 M73 55 L76 54 M75 59 L73 56 M75 59 L78 58" stroke="${METAL_HI}" stroke-width="1.3"/>
+  <path d="M40 71 L42 76 L44 71 M46 72 L48 77 L50 72 M52 71 L54 76 L56 71" fill="none" stroke="#ddd2b8" stroke-width="1.3"/>`,
+ c=>`<path d="M34 70 Q48 64 62 70" stroke="${c.acc}" stroke-width="1.2" fill="none" opacity=".7"/>
+  <path d="M36 75 L44 75 M52 75 L60 75" stroke="${c.acc}" stroke-width="1" opacity=".5"/>
+  <path d="M48 66 L49.6 70.4 L54 72 L49.6 73.6 L48 78 L46.4 73.6 L42 72 L46.4 70.4 Z" fill="${c.acc}"/>`,
+ c=>`<path d="M12 78 Q14 64 30 61 L34 66 Q22 68 20 80 Z" fill="#2b2530" stroke="${METAL}" stroke-width="1.2"/>
+  <path d="M84 78 Q82 64 66 61 L62 66 Q74 68 76 80 Z" fill="#2b2530" stroke="${METAL}" stroke-width="1.2"/>
+  <path d="M48 66 Q53 66 55 68 Q55 76 48 80 Q41 76 41 68 Q43 66 48 66 Z" fill="#1c161a" stroke="${c.acc}" stroke-width="1.4"/>
+  <path d="M48 69 L48 77 M44.5 72.5 L51.5 72.5" stroke="${c.acc}" stroke-width="1.1"/>`,
+ c=>`<path d="M32 66 L64 80" stroke="#241a12" stroke-width="3.5"/>
+  <g transform="rotate(8 48 73)"><rect x="40" y="70" width="16" height="6" rx="2.6" fill="#cbb583" stroke="#6a5432" stroke-width="1"/><path d="M43 70 L43 76 M53 70 L53 76" stroke="#6a5432" stroke-width=".9"/></g>
+  <circle cx="59" cy="82" r="2.8" fill="${c.acc}" stroke="#2c2010" stroke-width=".8"/>`,
+ c=>`<rect x="24" y="63" width="13" height="4.5" rx="1.5" fill="${METAL}" stroke="${METAL_HI}" stroke-width=".8"/>
+  <rect x="59" y="63" width="13" height="4.5" rx="1.5" fill="${METAL}" stroke="${METAL_HI}" stroke-width=".8"/>
+  <path d="M26 68 L26 73 M30 68 L30 74 M34 68 L34 73 M61 68 L61 73 M65 68 L65 74 M69 68 L69 73" stroke="${METAL_HI}" stroke-width="1.1"/>
+  <path d="M43 78 L43 70 L45.5 70 L45.5 72 L47 72 L47 70 L49 70 L49 72 L50.5 72 L50.5 70 L53 70 L53 78 Z" fill="${c.acc}"/>`,
+ c=>`<path d="M26 64 Q20 74 24 88 M70 64 Q76 74 72 88" stroke="${c.acc}" stroke-width="1.6" fill="none" opacity=".8"/>
+  <path d="M30 78 L66 78 L66 85 L30 85 Z" fill="#1c1512" stroke="${METAL}" stroke-width="1"/>
+  <circle cx="34" cy="81.5" r="1.1" fill="${METAL_HI}"/><circle cx="48" cy="81.5" r="1.1" fill="${METAL_HI}"/><circle cx="62" cy="81.5" r="1.1" fill="${METAL_HI}"/>
+  <path d="M48 66 L52.5 68.5 L52.5 73.5 L48 76 L43.5 73.5 L43.5 68.5 Z" fill="none" stroke="${c.acc}" stroke-width="1.5"/><circle cx="48" cy="71" r="1.5" fill="${c.acc}"/>`,
+];
+
+function portraitSVG(li,ci){
+  const L=LOOKS[li],P=CLASSES[ci].pal;
+  const c={...L.tone,cloak:P.cloak,acc:P.acc,bg:P.bg};
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Портрет: ${L.label} — ${CLASSES[ci].name}">
+<defs>
+<radialGradient id="bg" cx="50%" cy="32%" r="72%"><stop offset="0" stop-color="${P.bg}"/><stop offset="1" stop-color="#060509"/></radialGradient>
+<linearGradient id="ck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.cloak}"/><stop offset="1" stop-color="#0b0908"/></linearGradient>
+<radialGradient id="hl" cx="50%" cy="40%" r="48%"><stop offset="0" stop-color="${P.acc}" stop-opacity=".3"/><stop offset="1" stop-color="${P.acc}" stop-opacity="0"/></radialGradient>
+<linearGradient id="sh" x1="0" y1="1" x2=".55" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".62"/><stop offset=".55" stop-color="#000" stop-opacity="0"/></linearGradient>
+<radialGradient id="rim" cx="74%" cy="14%" r="64%"><stop offset="0" stop-color="#ffb25c" stop-opacity=".3"/><stop offset="1" stop-color="#ffb25c" stop-opacity="0"/></radialGradient>
+<radialGradient id="vg" cx="50%" cy="42%" r="66%"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/></radialGradient>
+<filter id="gr"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 .9 0 0 0 0 .75 0 0 0 .6 0"/></filter>
+</defs>
+<rect width="96" height="96" fill="url(#bg)"/>
+<rect width="96" height="96" fill="url(#hl)"/>
+<ellipse cx="48" cy="98" rx="40" ry="12" fill="#000" opacity=".5"/>
+${L.draw(c)}
+${GEAR[ci](c)}
+<rect width="96" height="96" fill="url(#sh)"/>
+<rect width="96" height="96" fill="url(#rim)"/>
+<rect width="96" height="96" fill="url(#vg)"/>
+<rect width="96" height="96" filter="url(#gr)" opacity=".055"/>
+<rect x="1.5" y="1.5" width="93" height="93" fill="none" stroke="#000" stroke-opacity=".6" stroke-width="3"/>
+</svg>`;
+}
+const uri=s=>'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(s);
+
+let selClass=0, selLook=0;
+const $=id=>document.getElementById(id);
+const classesEl=$('gateClasses'), avatarsEl=$('gateAvatars');
+
+CLASSES.forEach((cl,i)=>{
+  const b=document.createElement('button');
+  b.type='button'; b.className='gateTile classTile';
+  b.innerHTML=`<img alt=""><span class="tTxt"><strong>${cl.name}</strong><span>${cl.desc}</span></span><span class="tSigil" aria-hidden="true">${cl.sigil}</span>`;
+  b.addEventListener('click',()=>{selClass=i;update();});
+  classesEl.appendChild(b);
+});
+LOOKS.forEach((lk,i)=>{
+  const b=document.createElement('button');
+  b.type='button'; b.className='gateTile lookTile'; b.title=lk.label;
+  b.innerHTML=`<img alt="">`;
+  b.addEventListener('click',()=>{selLook=i;update();});
+  avatarsEl.appendChild(b);
+});
+const classBtns=[...classesEl.children], lookBtns=[...avatarsEl.children];
+
+function update(){
+  classBtns.forEach((b,i)=>{
+    b.classList.toggle('active',i===selClass);
+    b.setAttribute('aria-pressed',i===selClass);
+    const im=b.querySelector('img');
+    im.src=uri(portraitSVG(selLook,i));
+    im.alt=`Портрет: ${LOOKS[selLook].label} — ${CLASSES[i].name}`;
+  });
+  lookBtns.forEach((b,i)=>{
+    b.classList.toggle('active',i===selLook);
+    b.setAttribute('aria-pressed',i===selLook);
+    const im=b.querySelector('img');
+    im.src=uri(portraitSVG(i,selClass));
+    im.alt=`Внешность: ${LOOKS[i].label} — ${LOOKS[i].note}`;
+  });
+  const hero=$('heroBig');
+  hero.src=uri(portraitSVG(selLook,selClass));
+  hero.alt=`Портрет героя: ${LOOKS[selLook].label} — ${CLASSES[selClass].name}`;
+  $('heroClassName').textContent=CLASSES[selClass].name;
+  $('heroLookName').textContent=LOOKS[selLook].label;
+  $('giftBranch').textContent=CLASSES[selClass].branch;
+  $('giftSigil').textContent=CLASSES[selClass].sigil;
+  $('giftAbility').textContent=CLASSES[selClass].ability;
+  $('giftAbilityDesc').textContent=CLASSES[selClass].abilityDesc;
+}
+update();
+
+const form=$('gateForm'), nameEl=$('gateName'), errEl=$('gateError');
+form.addEventListener('submit',e=>{
+  e.preventDefault(); /* в приложении здесь создание героя */
+  if(!nameEl.value.trim()){
+    errEl.hidden=false;
+    nameEl.setAttribute('aria-invalid','true');
+    nameEl.focus();
+    return;
+  }
+  errEl.hidden=true;
+  nameEl.removeAttribute('aria-invalid');
+});
+nameEl.addEventListener('input',()=>{
+  if(nameEl.value.trim()){errEl.hidden=true;nameEl.removeAttribute('aria-invalid');}
+});
+</script>
+</body>
+</html>
